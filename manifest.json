@@ -1,0 +1,50 @@
+{
+  "name": "TOKI - 超级AI助手V3",
+  "short_name": "TOKI",
+  "description": "你的全能AI私人秘书 - 图像识别、视频生成、语音对话",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#667eea",
+  "theme_color": "#667eea",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities", "education"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "语音对话",
+      "short_name": "语音",
+      "description": "开始语音对话",
+      "url": "/video-call-spark.html",
+      "icons": [{ "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌟</text></svg>", "sizes": "any" }]
+    },
+    {
+      "name": "图像识别",
+      "short_name": "识别",
+      "description": "上传图片识别",
+      "url": "/#files",
+      "icons": [{ "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📸</text></svg>", "sizes": "any" }]
+    },
+    {
+      "name": "视频生成",
+      "short_name": "视频",
+      "description": "生成AI视频",
+      "url": "/#tools",
+      "icons": [{ "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>", "sizes": "any" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
+}
