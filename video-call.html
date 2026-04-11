@@ -281,10 +281,12 @@
             // 开始语音识别
             recognition.start();
             
-            // AI问候
-            speak('你好！我是TOKI，有什么可以帮你的吗？');
-            updateAIMessage('你好！我是TOKI，有什么可以帮你的吗？');
-            updateAIStatus('正在聆听...');
+            // AI问候（延迟1秒确保语音引擎加载）
+            setTimeout(() => {
+                speak('你好！我是TOKI，有什么可以帮你的吗？');
+                updateAIMessage('你好！我是TOKI，有什么可以帮你的吗？');
+                updateAIStatus('正在聆听...');
+            }, 1000);
         }
         
         // 结束通话
@@ -387,14 +389,19 @@
                 utterance.pitch = 1.0;
                 utterance.volume = 1.0;
                 
-                // 尝试使用女声
+                // 获取可用的中文语音
                 const voices = synthesis.getVoices();
-                const femaleVoice = voices.find(v => v.lang.includes('zh') && v.name.includes('Female'));
-                if (femaleVoice) {
-                    utterance.voice = femaleVoice;
+                console.log('可用语音列表:', voices.map(v => `${v.name} (${v.lang})`));
+                
+                // 优先使用中文女声
+                const zhVoice = voices.find(v => v.lang.includes('zh'));
+                if (zhVoice) {
+                    utterance.voice = zhVoice;
+                    console.log('使用语音:', zhVoice.name);
                 }
                 
                 utterance.onstart = () => {
+                    console.log('🔊 开始播放语音:', text);
                     updateAIStatus('正在说话...');
                     document.getElementById('aiAvatar').style.animation = 'pulse 0.5s ease-in-out infinite';
                 };
