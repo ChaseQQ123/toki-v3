@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TOKI - 讯飞星火语音通话</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .timer {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .ai-avatar-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .ai-avatar {
+            width: 200px;
+            height: 200px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 100px;
+            margin-bottom: 20px;
+            animation: pulse 2s ease-in-out infinite;
+            box-shadow: 0 0 60px rgba(255,255,255,0.3);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .ai-status {
+            font-size: 18px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .ai-message {
+            display: none; /* 隐藏文字 */
+        }
+        
+        .controls {
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        
+        .control-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .start-btn {
+            background: #4CAF50;
+            color: white;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        .start-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .end-btn {
+            background: #ff4444;
+            color: white;
+        }
+        
+        .hint {
+            text-align: center;
+            padding: 10px 20px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.7);
+        }
+        
+        .powered-by {
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            color: rgba(255,255,255,0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="back-btn" onclick="goBack()">← 返回</button>
+            <div class="timer" id="timer">00:00</div>
+        </div>
+        
+        <div class="ai-avatar-container">
+            <div class="ai-avatar" id="aiAvatar">🤖</div>
+            <div class="ai-status" id="aiStatus">点击开始与TOKI语音对话</div>
+            <div class="ai-message" id="aiMessage"></div>
+        </div>
+        
+        <div class="controls">
+            <button class="start-btn" id="startBtn" onclick="startCall()">📞</button>
+            <button class="end-btn" id="endBtn" onclick="endCall()" style="display:none;">📞</button>
+        </div>
+        
+        <div class="hint" id="hint">使用讯飞星火Lite - 无限免费</div>
+        <div class="powered-by">Powered by 讯飞星火大模型</div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
+    <script>
+        // 讯飞星火API配置
+        const SPARK_CONFIG = {
+            APPID: '375ffe02',
+            APIKey: 'a5f5156fb7cb051d55866912f67178d0',
+            APISecret: 'ZGNkYWM3MmYyNmIzYjUwYTYwZGZmZjA5',
+            hostUrl: 'wss://spark-api.xf-yun.com/v1.1/chat',
+            domain: 'lite'
+        };
+        
+        // 状态管理
+        let isCallActive = false;
+        let callStartTime = null;
+        let timerInterval = null;
+        let recognition = null;
+        let synthesis = window.speechSynthesis;
+        let ws = null;
+        let conversationHistory = [];
+        
+        function goBack() {
+            endCall();
+            window.location.href = 'index.html';
+        }
+        
+        // 生成鉴权URL
+        function getAuthUrl() {
+            const host = 'spark-api.xf-yun.com';
+            const path = '/v1.1/chat';
+            const date = new Date().toGMTString();
+            
+            const signatureOrigin = `host: ${host}\ndate: ${date}\nGET ${path} HTTP/1.1`;
+            const signatureSha = CryptoJS.HmacSHA256(signatureOrigin, SPARK_CONFIG.APISecret);
+            const signature = CryptoJS.enc.Base64.stringify(signatureSha);
+            
+            const authorizationOrigin = `api_key="${SPARK_CONFIG.APIKey}", algorithm="hmac-sha256", headers="host date request-line", signature="${signature}"`;
+            const authorization = btoa(authorizationOrigin);
+            
+            const url = `${SPARK_CONFIG.hostUrl}?authorization=${authorization}&date=${encodeURIComponent(date)}&host=${host}`;
+            return url;
+        }
+        
+        // 初始化语音识别
+        function initSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            if (!SpeechRecognition) {
+                alert('你的浏览器不支持语音识别，请使用Chrome浏览器');
+                return false;
+            }
+            
+            recognition = new SpeechRecognition();
+            recognition.lang = 'zh-CN';
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            
+            recognition.onresult = async (event) => {
+                const text = event.results[0][0].transcript;
+                console.log('识别到语音:', text);
+                await sendToSpark(text);
+            };
+            
+            recognition.onerror = (event) => {
+                console.error('语音识别错误:', event.error);
+                if (event.error === 'not-allowed') {
+                    alert('请允许麦克风权限');
+                }
+            };
+            
+            recognition.onend = () => {
+                console.log('语音识别结束');
+            };
+            
+            return true;
+        }
+        
+        // 连接WebSocket
+        function connectSpark() {
+            return new Promise((resolve, reject) => {
+                const url = getAuthUrl();
+                ws = new WebSocket(url);
+                
+                ws.onopen = () => {
+                    console.log('✅ 已连接讯飞星火');
+                    resolve();
+                };
+                
+                ws.onerror = (error) => {
+                    console.error('❌ WebSocket错误:', error);
+                    reject(error);
+                };
+                
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    handleSparkResponse(data);
+                };
+                
+                ws.onclose = () => {
+                    console.log('WebSocket已关闭');
+                };
+            });
+        }
+        
+        // 发送消息到星火
+        async function sendToSpark(text) {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                await connectSpark();
+            }
+            
+            updateAIStatus('思考中...');
+            
+            // 添加到对话历史
+            conversationHistory.push({ role: 'user', content: text });
+            
+            const request = {
+                header: {
+                    app_id: SPARK_CONFIG.APPID,
+                    uid: 'user_001'
+                },
+                parameter: {
+                    chat: {
+                        domain: SPARK_CONFIG.domain,
+                        temperature: 0.5,
+                        max_tokens: 1024
+                    }
+                },
+                payload: {
+                    message: {
+                        text: conversationHistory
+                    }
+                }
+            };
+            
+            ws.send(JSON.stringify(request));
+        }
+        
+        // 处理星火响应
+        function handleSparkResponse(data) {
+            if (data.header.code !== 0) {
+                console.error('API错误:', data.header.message);
+                updateAIStatus('出错了，请重试');
+                return;
+            }
+            
+            const content = data.payload.choices.text[0].content;
+            const status = data.payload.choices.status;
+            
+            if (status === 2) {
+                // 最后一个结果
+                console.log('AI回复:', content);
+                
+                // 添加到对话历史
+                conversationHistory.push({ role: 'assistant', content: content });
+                
+                // 语音播放
+                speak(content);
+                updateAIStatus('正在说话...');
+                
+                // 说话结束后继续监听
+                setTimeout(() => {
+                    if (isCallActive) {
+                        recognition.start();
+                        updateAIStatus('正在聆听...');
+                    }
+                }, 2000);
+            }
+        }
+        
+        // 语音合成
+        function speak(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+            
+            utterance.onstart = () => {
+                document.getElementById('aiAvatar').style.animation = 'pulse 0.5s ease-in-out infinite';
+            };
+            
+            utterance.onend = () => {
+                document.getElementById('aiAvatar').style.animation = 'pulse 2s ease-in-out infinite';
+            };
+            
+            synthesis.speak(utterance);
+        }
+        
+        // 开始通话
+        async function startCall() {
+            if (!initSpeechRecognition()) {
+                return;
+            }
+            
+            isCallActive = true;
+            callStartTime = Date.now();
+            
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('endBtn').style.display = 'flex';
+            document.getElementById('hint').textContent = '正在聆听...说出你的问题';
+            
+            timerInterval = setInterval(updateTimer, 1000);
+            
+            try {
+                await connectSpark();
+                recognition.start();
+                updateAIStatus('正在聆听...');
+                
+                // 播放问候语
+                setTimeout(() => {
+                    speak('你好！我是TOKI，有什么可以帮你的吗？');
+                    updateAIStatus('正在说话...');
+                }, 500);
+                
+            } catch (error) {
+                alert('连接失败，请重试');
+                endCall();
+            }
+        }
+        
+        // 结束通话
+        function endCall() {
+            isCallActive = false;
+            
+            if (recognition) {
+                try {
+                    recognition.stop();
+                } catch (e) {}
+            }
+            
+            if (ws) {
+                ws.close();
+            }
+            
+            if (synthesis) {
+                synthesis.cancel();
+            }
+            
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            
+            conversationHistory = [];
+            
+            document.getElementById('startBtn').style.display = 'flex';
+            document.getElementById('endBtn').style.display = 'none';
+            document.getElementById('aiStatus').textContent = '通话已结束';
+            document.getElementById('hint').textContent = '点击绿色按钮重新开始';
+        }
+        
+        // 更新计时器
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - callStartTime) / 1000);
+            const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const seconds = (elapsed % 60).toString().padStart(2, '0');
+            document.getElementById('timer').textContent = `${minutes}:${seconds}`;
+        }
+        
+        // 更新状态
+        function updateAIStatus(status) {
+            document.getElementById('aiStatus').textContent = status;
+        }
+    </script>
+</body>
+</html>
