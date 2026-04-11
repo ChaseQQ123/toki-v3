@@ -368,6 +368,10 @@
                 <span class="nav-icon">🔍</span>
                 <span class="nav-label">搜索</span>
             </div>
+            <div class="nav-item" onclick="switchTab('memory')">
+                <span class="nav-icon">🧠</span>
+                <span class="nav-label">记忆</span>
+            </div>
         </nav>
         
         <!-- 内容区域 -->
@@ -427,6 +431,22 @@
                 </div>
                 <div id="searchResults"></div>
             </div>
+            
+            <!-- 记忆标签页 -->
+            <div id="memoryTab" class="tab-content">
+                <div style="padding: 20px;">
+                    <h3 style="margin-bottom: 15px;">🧠 我的记忆</h3>
+                    <div id="memoryStats" style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
+                        <span id="memoryCount">📝 0 条记忆</span>
+                    </div>
+                    <div id="memoryList" style="max-height: 400px; overflow-y: auto;"></div>
+                    <div style="margin-top: 15px; display: flex; gap: 10px;">
+                        <button onclick="refreshMemories()" style="flex: 1; padding: 10px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer;">🔄 刷新</button>
+                        <button onclick="exportMemories()" style="flex: 1; padding: 10px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer;">📤 导出</button>
+                        <button onclick="clearAllMemories()" style="flex: 1; padding: 10px; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer;">🗑️ 清除</button>
+                    </div>
+                </div>
+            </div>
         </main>
         
         <!-- 输入区域 -->
@@ -450,6 +470,7 @@
         </div>
     </div>
     
+    <script src="memory-system.js"></script>
     <script>
         // API配置
         const API_KEY = 'c4911cf15f844167bd26301e25622cf1.n1BU10ytXbnQ6N5d';
@@ -949,6 +970,9 @@
                         
                         addMessage(`<img src="${imageUrl}" style="max-width:100%;border-radius:8px;">`, 'bot');
                         addMessage('🎨 图片生成成功！', 'bot');
+                        
+                        // 保存到记忆
+                        tokiMemory.memorize(message, '图片已生成', { type: 'image' });
                     } else {
                         throw new Error('图像生成失败');
                     }
@@ -961,6 +985,15 @@
                         messages.push({
                             role: 'system',
                             content: AGENTS[currentAgent].systemPrompt
+                        });
+                    }
+                    
+                    // ⭐ 新增：查询相关记忆作为上下文
+                    const memoryContext = tokiMemory.buildContext(message);
+                    if (memoryContext) {
+                        messages.push({
+                            role: 'system',
+                            content: memoryContext
                         });
                     }
                     
@@ -989,6 +1022,9 @@
                         // 保存对话历史
                         conversationHistory.push({ role: 'user', content: message });
                         conversationHistory.push({ role: 'assistant', content: reply });
+                        
+                        // ⭐ 新增：保存到记忆系统
+                        tokiMemory.memorize(message, reply, { agent: currentAgent });
                         
                         // 保持历史记录不超过20条
                         if (conversationHistory.length > 20) {
@@ -1030,7 +1066,50 @@
         }
         
         // 页面加载完成后初始化
-        window.onload = init;
+        window.onload = function() {
+            init();
+            refreshMemories();
+        };
+        
+        // 记忆管理函数
+        function refreshMemories() {
+            const count = tokiMemory.memories.length;
+            document.getElementById('memoryCount').textContent = `📝 ${count} 条记忆`;
+            
+            const memoryList = document.getElementById('memoryList');
+            memoryList.innerHTML = '';
+            
+            const recentMemories = tokiMemory.memories.slice(-10).reverse();
+            recentMemories.forEach(memory => {
+                const div = document.createElement('div');
+                div.style.cssText = 'background: white; padding: 10px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid #667eea;';
+                div.innerHTML = `
+                    <div style="font-size: 12px; color: #999; margin-bottom: 5px;">${new Date(memory.timestamp).toLocaleString()}</div>
+                    <div style="font-weight: bold; margin-bottom: 5px;">${memory.input.substring(0, 50)}...</div>
+                    <div style="color: #666; font-size: 13px;">${memory.output.substring(0, 100)}...</div>
+                `;
+                memoryList.appendChild(div);
+            });
+        }
+        
+        function exportMemories() {
+            const data = tokiMemory.exportMemories();
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `toki-memories-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            alert('记忆已导出！');
+        }
+        
+        function clearAllMemories() {
+            if (confirm('确定要清除所有记忆吗？此操作不可恢复！')) {
+                tokiMemory.clearMemories();
+                refreshMemories();
+                alert('记忆已清除！');
+            }
+        }
         
         // 注册Service Worker (PWA)
         if ('serviceWorker' in navigator) {

@@ -1,0 +1,21 @@
+{
+  "name": "toki-v2",
+  "version": "1.0.0",
+  "description": "完善视频通话功能，实现真正的实时视频通话。",
+  "main": "sw.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChaseQQ123/toki-v3.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ChaseQQ123/toki-v3/issues"
+  },
+  "homepage": "https://github.com/ChaseQQ123/toki-v3#readme"
+}
