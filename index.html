@@ -164,6 +164,16 @@
             grid-template-columns: repeat(3, 1fr);
             gap: 10px;
         }
+        
+        /* 视频和语音工具特殊样式 */
+        .tool-item.featured {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .tool-item.featured .tool-name {
+            color: white;
+        }
         .tool-item {
             background: white;
             border-radius: 12px;
@@ -358,10 +368,12 @@
                 <div class="message-wrapper">
                     <div class="bot-avatar">🤖</div>
                     <div class="message bot">
-                        ✅ TOKI V3.0 已加载！<br><br>
+                        ✅ TOKI V3.0 完整版已加载！<br><br>
                         🎨 <strong>图像生成</strong>：说"画一只猫"<br>
-                        💬 <strong>文本对话</strong>：随意聊天<br>
-                        🤖 <strong>智能体</strong>：专业助手<br><br>
+                        🎤 <strong>语音助手</strong>：语音实时对话<br>
+                        📹 <strong>视频通话</strong>：P2P视频聊天<br>
+                        🤖 <strong>智能体</strong>：专业助手<br>
+                        🛠️ <strong>工具箱</strong>：计算器、天气等<br><br>
                         试试"画一只可爱的猫"！
                     </div>
                 </div>
@@ -472,6 +484,22 @@
         
         // 工具定义
         const TOOLS = {
+            voice: {
+                id: 'voice',
+                name: '语音助手',
+                icon: '🎤',
+                description: '语音实时对话',
+                isExternal: true,
+                url: 'https://chaseqq123.github.io/toki-app/voice-assistant/'
+            },
+            video: {
+                id: 'video',
+                name: '视频通话',
+                icon: '📹',
+                description: 'P2P视频聊天',
+                isExternal: true,
+                url: 'video-call.html'
+            },
             calculator: {
                 id: 'calculator',
                 name: '计算器',
@@ -548,7 +576,7 @@
         function renderTools() {
             const container = document.getElementById('toolsGrid');
             container.innerHTML = Object.values(TOOLS).map(tool => `
-                <div class="tool-item" onclick="openTool('${tool.id}')">
+                <div class="tool-item ${tool.isExternal ? 'featured' : ''}" onclick="openTool('${tool.id}')">
                     <div class="tool-icon">${tool.icon}</div>
                     <div class="tool-name">${tool.name}</div>
                 </div>
@@ -584,6 +612,13 @@
         // 打开工具
         function openTool(toolId) {
             const tool = TOOLS[toolId];
+            
+            // 如果是外部链接，直接跳转
+            if (tool.isExternal) {
+                window.open(tool.url, '_blank');
+                return;
+            }
+            
             currentTool = toolId;
             
             document.getElementById('toolTitle').textContent = tool.name;
