@@ -294,49 +294,88 @@
         
         // 处理星火响应
         function handleSparkResponse(data) {
+            console.log('收到响应:', data);
+            
             if (data.header.code !== 0) {
                 console.error('API错误:', data.header.message);
-                updateAIStatus('出错了，请重试');
+                updateAIStatus('出错了：' + data.header.message);
+                alert('API错误：' + data.header.message);
                 return;
             }
             
             const content = data.payload.choices.text[0].content;
             const status = data.payload.choices.status;
             
+            console.log('AI回复内容:', content, '状态:', status);
+            
             if (status === 2) {
                 // 最后一个结果
-                console.log('AI回复:', content);
+                console.log('✅ 完整回复:', content);
                 
                 // 添加到对话历史
                 conversationHistory.push({ role: 'assistant', content: content });
                 
                 // 语音播放
-                speak(content);
                 updateAIStatus('正在说话...');
-                
-                // 说话结束后继续监听
-                setTimeout(() => {
-                    if (isCallActive) {
-                        recognition.start();
-                        updateAIStatus('正在聆听...');
-                    }
-                }, 2000);
+                speak(content);
             }
         }
         
         // 语音合成
         function speak(text) {
+            console.log('🔊 准备播放语音:', text);
+            
+            if (!synthesis) {
+                console.error('浏览器不支持语音合成');
+                alert('浏览器不支持语音合成');
+                return;
+            }
+            
+            // 取消之前的语音
+            synthesis.cancel();
+            
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'zh-CN';
             utterance.rate = 1.0;
             utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+            
+            // 获取可用的中文语音
+            const voices = synthesis.getVoices();
+            console.log('可用语音:', voices.map(v => v.name + '(' + v.lang + ')'));
+            
+            const zhVoice = voices.find(v => v.lang.includes('zh'));
+            if (zhVoice) {
+                utterance.voice = zhVoice;
+                console.log('使用语音:', zhVoice.name);
+            }
             
             utterance.onstart = () => {
+                console.log('🔊 开始播放语音');
                 document.getElementById('aiAvatar').style.animation = 'pulse 0.5s ease-in-out infinite';
             };
             
             utterance.onend = () => {
+                console.log('✅ 语音播放结束');
                 document.getElementById('aiAvatar').style.animation = 'pulse 2s ease-in-out infinite';
+                
+                // 说话结束后继续监听
+                setTimeout(() => {
+                    if (isCallActive) {
+                        try {
+                            recognition.start();
+                            console.log('🎤 重新启动语音识别');
+                            updateAIStatus('正在聆听...');
+                        } catch (e) {
+                            console.error('重启语音识别失败:', e);
+                        }
+                    }
+                }, 500);
+            };
+            
+            utterance.onerror = (e) => {
+                console.error('❌ 语音合成错误:', e);
+                alert('语音合成失败：' + e.error);
             };
             
             synthesis.speak(utterance);
@@ -359,17 +398,29 @@
             
             try {
                 await connectSpark();
-                recognition.start();
-                updateAIStatus('正在聆听...');
+                console.log('WebSocket连接成功');
                 
-                // 播放问候语
+                // 先播放问候语
+                const greeting = '你好！我是TOKI，有什么可以帮你的吗？';
+                updateAIStatus('正在说话...');
+                speak(greeting);
+                
+                // 延迟启动语音识别
                 setTimeout(() => {
-                    speak('你好！我是TOKI，有什么可以帮你的吗？');
-                    updateAIStatus('正在说话...');
-                }, 500);
+                    if (isCallActive) {
+                        try {
+                            recognition.start();
+                            console.log('🎤 语音识别已启动');
+                            updateAIStatus('正在聆听...');
+                        } catch (e) {
+                            console.error('启动语音识别失败:', e);
+                        }
+                    }
+                }, 2500);
                 
             } catch (error) {
-                alert('连接失败，请重试');
+                console.error('连接失败:', error);
+                alert('连接失败：' + error.message);
                 endCall();
             }
         }
