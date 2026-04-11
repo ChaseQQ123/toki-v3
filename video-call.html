@@ -172,6 +172,32 @@
             font-size: 12px;
             color: rgba(255,255,255,0.7);
         }
+        
+        /* Safari提示 */
+        .safari-notice {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.95);
+            color: #333;
+            padding: 15px 20px;
+            border-radius: 12px;
+            font-size: 13px;
+            z-index: 100;
+            max-width: 90%;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        .safari-notice button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -200,7 +226,7 @@
         </div>
         
         <!-- 提示 -->
-        <div class="hint" id="hint">语音识别需要Chrome浏览器</div>
+        <div class="hint" id="hint">推荐使用Chrome浏览器获得最佳体验</div>
     </div>
     
     <script>
@@ -216,40 +242,76 @@
         let recognition = null;
         let synthesis = window.speechSynthesis;
         let conversationHistory = [];
+        let isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        
+        // 显示Safari提示
+        if (isSafari) {
+            document.getElementById('hint').textContent = '检测到Safari，语音功能可能受限';
+        }
         
         // 初始化语音识别
         function initSpeechRecognition() {
-            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                recognition = new SpeechRecognition();
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            if (!SpeechRecognition) {
+                const message = '⚠️ 你的浏览器不支持语音识别\n\n请使用：\n• Chrome浏览器（推荐）\n• Edge浏览器\n\n或使用主页的"对话"功能进行文字交流';
+                alert(message);
+                return false;
+            }
+            
+            recognition = new SpeechRecognition();
+            recognition.lang = 'zh-CN';
+            
+            // Safari特殊处理：不支持连续识别
+            if (isSafari) {
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                console.log('📱 Safari模式：单次识别');
+            } else {
                 recognition.continuous = true;
                 recognition.interimResults = false;
-                recognition.lang = 'zh-CN';
-                
-                recognition.onresult = async (event) => {
-                    const last = event.results.length - 1;
-                    const text = event.results[last][0].transcript;
-                    
-                    console.log('识别到语音:', text);
-                    addChatMessage(text, 'user');
-                    await processUserInput(text);
-                };
-                
-                recognition.onerror = (event) => {
-                    console.error('语音识别错误:', event.error);
-                    updateAIStatus('语音识别出错，请重试');
-                };
-                
-                recognition.onend = () => {
-                    if (isCallActive && !isMuted) {
-                        // 如果通话还在进行且未静音，继续监听
-                        recognition.start();
-                    }
-                };
-                
-                return true;
             }
-            return false;
+            
+            recognition.onresult = async (event) => {
+                const last = event.results.length - 1;
+                const text = event.results[last][0].transcript;
+                
+                console.log('✅ 识别到语音:', text);
+                addChatMessage(text, 'user');
+                await processUserInput(text);
+            };
+            
+            recognition.onerror = (event) => {
+                console.error('❌ 语音识别错误:', event.error);
+                
+                if (event.error === 'not-allowed') {
+                    alert('❌ 麦克风权限被拒绝\n\n请在浏览器设置中允许麦克风权限');
+                } else if (event.error === 'no-speech') {
+                    console.log('未检测到语音');
+                } else {
+                    updateAIStatus('语音识别出错: ' + event.error);
+                }
+            };
+            
+            recognition.onend = () => {
+                console.log('语音识别结束');
+                if (isCallActive && !isMuted) {
+                    // Safari需要延迟重启
+                    const delay = isSafari ? 1000 : 500;
+                    setTimeout(() => {
+                        if (isCallActive && !isMuted && recognition) {
+                            try {
+                                recognition.start();
+                                console.log('🔄 重新启动语音识别');
+                            } catch (e) {
+                                console.error('重启失败:', e);
+                            }
+                        }
+                    }, delay);
+                }
+            };
+            
+            return true;
         }
         
         // 返回
@@ -261,7 +323,6 @@
         // 开始通话
         function startCall() {
             if (!initSpeechRecognition()) {
-                alert('你的浏览器不支持语音识别，请使用Chrome浏览器');
                 return;
             }
             
@@ -279,12 +340,18 @@
             timerInterval = setInterval(updateTimer, 1000);
             
             // 开始语音识别
-            recognition.start();
+            try {
+                recognition.start();
+                console.log('🎤 语音识别已启动');
+            } catch (e) {
+                console.error('启动失败:', e);
+            }
             
-            // AI问候（延迟1秒确保语音引擎加载）
+            // AI问候（延迟确保语音引擎加载）
             setTimeout(() => {
-                speak('你好！我是TOKI，有什么可以帮你的吗？');
-                updateAIMessage('你好！我是TOKI，有什么可以帮你的吗？');
+                const greeting = '你好！我是TOKI，有什么可以帮你的吗？';
+                speak(greeting);
+                updateAIMessage(greeting);
                 updateAIStatus('正在聆听...');
             }, 1000);
         }
@@ -295,7 +362,9 @@
             
             // 停止语音识别
             if (recognition) {
-                recognition.stop();
+                try {
+                    recognition.stop();
+                } catch (e) {}
             }
             
             // 停止语音合成
@@ -324,11 +393,17 @@
             muteBtn.classList.toggle('active', isMuted);
             
             if (isMuted) {
-                recognition.stop();
+                if (recognition) recognition.stop();
                 updateAIStatus('已静音');
             } else {
-                recognition.start();
-                updateAIStatus('正在聆听...');
+                if (recognition) {
+                    try {
+                        recognition.start();
+                        updateAIStatus('正在聆听...');
+                    } catch (e) {
+                        console.error('重启失败:', e);
+                    }
+                }
             }
         }
         
@@ -354,7 +429,7 @@
                                 role: 'system',
                                 content: '你是TOKI，一个友好、专业的AI助手。请用简洁、自然的口语回答，适合语音输出。回答长度控制在50字以内。'
                             },
-                            ...conversationHistory.slice(-10) // 保留最近10轮对话
+                            ...conversationHistory.slice(-10)
                         ]
                     })
                 });
@@ -381,40 +456,76 @@
         
         // 语音合成
         function speak(text) {
-            if (synthesis) {
-                synthesis.cancel(); // 停止之前的语音
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'zh-CN';
-                utterance.rate = 1.0;
-                utterance.pitch = 1.0;
-                utterance.volume = 1.0;
-                
-                // 获取可用的中文语音
+            if (!synthesis) {
+                console.warn('浏览器不支持语音合成');
+                return;
+            }
+            
+            synthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-CN';
+            utterance.rate = isSafari ? 0.9 : 1.0;
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+            
+            // Safari需要等待语音列表加载
+            const setVoice = () => {
                 const voices = synthesis.getVoices();
-                console.log('可用语音列表:', voices.map(v => `${v.name} (${v.lang})`));
+                console.log('可用语音:', voices.map(v => `${v.name}(${v.lang})`).join(', '));
                 
-                // 优先使用中文女声
+                // 优先使用中文语音
                 const zhVoice = voices.find(v => v.lang.includes('zh'));
                 if (zhVoice) {
                     utterance.voice = zhVoice;
                     console.log('使用语音:', zhVoice.name);
                 }
-                
-                utterance.onstart = () => {
-                    console.log('🔊 开始播放语音:', text);
-                    updateAIStatus('正在说话...');
-                    document.getElementById('aiAvatar').style.animation = 'pulse 0.5s ease-in-out infinite';
-                };
-                
-                utterance.onend = () => {
-                    document.getElementById('aiAvatar').style.animation = 'pulse 2s ease-in-out infinite';
-                    if (isCallActive && !isMuted) {
-                        updateAIStatus('正在聆听...');
-                    }
-                };
-                
-                synthesis.speak(utterance);
+            };
+            
+            // Safari特殊处理
+            if (isSafari && synthesis.getVoices().length === 0) {
+                synthesis.onvoiceschanged = setVoice;
+            } else {
+                setVoice();
             }
+            
+            utterance.onstart = () => {
+                console.log('🔊 播放语音:', text);
+                updateAIStatus('正在说话...');
+                document.getElementById('aiAvatar').style.animation = 'pulse 0.5s ease-in-out infinite';
+                
+                // 说话时暂停语音识别
+                if (recognition && !isSafari) {
+                    try {
+                        recognition.stop();
+                    } catch (e) {}
+                }
+            };
+            
+            utterance.onend = () => {
+                console.log('语音播放结束');
+                document.getElementById('aiAvatar').style.animation = 'pulse 2s ease-in-out infinite';
+                
+                // 说话结束后恢复语音识别
+                if (isCallActive && !isMuted) {
+                    setTimeout(() => {
+                        if (recognition && isCallActive && !isMuted) {
+                            try {
+                                recognition.start();
+                                updateAIStatus('正在聆听...');
+                            } catch (e) {
+                                console.error('重启识别失败:', e);
+                            }
+                        }
+                    }, 500);
+                }
+            };
+            
+            utterance.onerror = (e) => {
+                console.error('语音合成错误:', e);
+            };
+            
+            synthesis.speak(utterance);
         }
         
         // 更新计时器
@@ -445,10 +556,12 @@
             chatHistory.scrollTop = chatHistory.scrollHeight;
         }
         
-        // 加载语音
+        // 加载语音列表
         if (synthesis) {
+            synthesis.getVoices();
             synthesis.onvoiceschanged = () => {
-                synthesis.getVoices();
+                const voices = synthesis.getVoices();
+                console.log('已加载', voices.length, '个语音');
             };
         }
     </script>
