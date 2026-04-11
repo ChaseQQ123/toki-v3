@@ -370,10 +370,13 @@
                     <div class="message bot">
                         ✅ TOKI V3.0 完整版已加载！<br><br>
                         🎨 <strong>图像生成</strong>：说"画一只猫"<br>
+                        📸 <strong>图像识别</strong>：上传图片识别（GLM-4V-Flash）⭐<br>
+                        🎬 <strong>视频生成</strong>：文字生成视频⭐<br>
                         🎤 <strong>语音助手</strong>：智谱AI语音对话<br>
-                        🌟 <strong>星火语音</strong>：讯飞星火（无限免费）⭐<br>
+                        🌟 <strong>星火语音</strong>：讯飞星火（无限免费）<br>
                         🤖 <strong>智能体</strong>：专业助手<br>
                         🛠️ <strong>工具箱</strong>：计算器、天气等<br><br>
+                        <strong>所有功能完全免费！</strong><br><br>
                         试试"画一只可爱的猫"！
                     </div>
                 </div>
@@ -394,10 +397,17 @@
                 <div class="upload-area" onclick="document.getElementById('fileInput').click()">
                     <div class="upload-icon">📁</div>
                     <div class="upload-text">点击或拖拽文件到此处</div>
-                    <div class="upload-hint">支持 PDF、Word、Excel、图片</div>
+                    <div class="upload-hint">支持图片识别（GLM-4V-Flash）、视频生成</div>
                 </div>
-                <input type="file" id="fileInput" style="display:none" onchange="handleFileUpload(event)">
+                <input type="file" id="fileInput" style="display:none" accept="image/*" onchange="handleFileUpload(event)">
                 <div id="fileList" style="margin-top:20px"></div>
+                
+                <!-- 图像识别按钮 -->
+                <div id="imageActions" style="margin-top:20px;display:none;">
+                    <button onclick="analyzeImage()" style="width:100%;padding:12px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;border:none;border-radius:8px;cursor:pointer;">
+                        🔍 图像识别（GLM-4V-Flash）
+                    </button>
+                </div>
             </div>
             
             <!-- 搜索标签页 -->
@@ -499,6 +509,14 @@
                 description: '讯飞星火（无限免费）',
                 isExternal: true,
                 url: 'video-call-spark.html'
+            },
+            video: {
+                id: 'video',
+                name: '视频生成',
+                icon: '🎬',
+                description: '文字生成视频（免费）',
+                isExternal: false,
+                placeholder: '输入视频描述，如：一只猫在草地上玩耍'
             },
             calculator: {
                 id: 'calculator',
@@ -641,7 +659,16 @@
             
             let result = '';
             
-            if (currentTool === 'calculator') {
+            if (currentTool === 'video') {
+                // 视频生成（CogVideoX-Flash）
+                if (!input) {
+                    alert('请输入视频描述');
+                    return;
+                }
+                closeModal();
+                await generateVideo(input);
+                return;
+            } else if (currentTool === 'calculator') {
                 try {
                     result = `计算结果：${input} = ${eval(input)}`;
                 } catch (e) {
@@ -672,6 +699,59 @@
             
             if (input) addMessage(input, 'user');
             addMessage(result, 'bot');
+        }
+        
+        // 视频生成（CogVideoX-Flash）
+        async function generateVideo(prompt) {
+            // 切换到对话标签页
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById('chatTab').classList.add('active');
+            document.querySelectorAll('.nav-item')[0].classList.add('active');
+            
+            addMessage(`🎬 生成视频：${prompt}`, 'user');
+            addMessage('正在生成视频，请稍候...（CogVideoX-Flash免费生成）', 'bot');
+            
+            try {
+                const response = await fetch(`${BASE_URL}/videos/generations`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: 'cogvideox-flash',
+                        prompt: prompt
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const videoUrl = data.data[0].url;
+                    
+                    // 移除等待消息，显示视频
+                    const messages = document.querySelectorAll('.message.bot');
+                    const lastMessage = messages[messages.length - 1];
+                    if (lastMessage && lastMessage.textContent.includes('正在生成')) {
+                        lastMessage.innerHTML = `
+                            ✅ 视频生成成功！<br><br>
+                            <video controls style="max-width:100%;border-radius:8px;">
+                                <source src="${videoUrl}" type="video/mp4">
+                                您的浏览器不支持视频播放
+                            </video>
+                        `;
+                    }
+                } else {
+                    throw new Error('视频生成失败');
+                }
+            } catch (error) {
+                console.error('错误:', error);
+                const messages = document.querySelectorAll('.message.bot');
+                const lastMessage = messages[messages.length - 1];
+                if (lastMessage) {
+                    lastMessage.textContent = '视频生成失败，请重试';
+                }
+            }
         }
         
         // 翻译文本
@@ -712,19 +792,21 @@
             const fileList = document.getElementById('fileList');
             
             if (file.type.startsWith('image/')) {
-                // 图片文件
+                // 图片文件 - 显示图像识别按钮
                 const reader = new FileReader();
                 reader.onload = (e) => {
+                    window.uploadedImageUrl = e.target.result; // 保存图片数据
                     fileList.innerHTML = `
                         <div class="agent-card">
                             <div class="agent-header">
                                 <span class="agent-icon">🖼️</span>
                                 <span class="agent-name">${file.name}</span>
                             </div>
-                            <div class="agent-desc">图片已上传，可以使用GLM-4V进行识别</div>
+                            <div class="agent-desc">图片已上传，可以识别图片内容</div>
                             <img src="${e.target.result}" style="max-width:100%;border-radius:8px;margin-top:10px">
                         </div>
                     `;
+                    document.getElementById('imageActions').style.display = 'block';
                 };
                 reader.readAsDataURL(file);
             } else {
@@ -738,6 +820,55 @@
                         <div class="agent-desc">文件已上传（需要后端解析）</div>
                     </div>
                 `;
+                document.getElementById('imageActions').style.display = 'none';
+            }
+        }
+        
+        // 图像识别（GLM-4V-Flash）
+        async function analyzeImage() {
+            if (!window.uploadedImageUrl) {
+                alert('请先上传图片');
+                return;
+            }
+            
+            // 切换到对话标签页
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById('chatTab').classList.add('active');
+            document.querySelectorAll('.nav-item')[0].classList.add('active');
+            
+            addMessage('📷 请识别这张图片的内容', 'user');
+            addMessage('<img src="' + window.uploadedImageUrl + '" style="max-width:100%;border-radius:8px;">', 'bot');
+            
+            try {
+                const response = await fetch(`${BASE_URL}/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: 'glm-4v-flash',
+                        messages: [{
+                            role: 'user',
+                            content: [
+                                { type: 'text', text: '请详细描述这张图片的内容' },
+                                { type: 'image_url', image_url: { url: window.uploadedImageUrl } }
+                            ]
+                        }]
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const result = data.choices[0].message.content;
+                    addMessage(result, 'bot');
+                } else {
+                    throw new Error('图像识别失败');
+                }
+            } catch (error) {
+                console.error('错误:', error);
+                addMessage('图像识别失败，请重试', 'bot');
             }
         }
         
