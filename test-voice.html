@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>语音测试</title>
+</head>
+<body style="padding:20px;font-family:sans-serif;">
+    <h1>🔊 Chrome语音测试</h1>
+    
+    <button onclick="testSpeech()" style="padding:10px 20px;font-size:16px;margin:10px;">
+        🎤 测试语音识别
+    </button>
+    
+    <button onclick="testSynthesis()" style="padding:10px 20px;font-size:16px;margin:10px;">
+        🔊 测试语音播放
+    </button>
+    
+    <div id="result" style="margin-top:20px;padding:20px;background:#f0f0f0;border-radius:8px;">
+        点击按钮测试...
+    </div>
+    
+    <script>
+        function testSpeech() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                document.getElementById('result').innerHTML = '❌ 浏览器不支持语音识别';
+                return;
+            }
+            
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'zh-CN';
+            
+            recognition.onresult = (event) => {
+                const text = event.results[0][0].transcript;
+                document.getElementById('result').innerHTML = '✅ 识别成功：' + text;
+            };
+            
+            recognition.onerror = (e) => {
+                document.getElementById('result').innerHTML = '❌ 识别失败：' + e.error;
+            };
+            
+            recognition.start();
+            document.getElementById('result').innerHTML = '🎤 请说话...';
+        }
+        
+        function testSynthesis() {
+            const utterance = new SpeechSynthesisUtterance('测试成功！你能听到这个声音吗？');
+            utterance.lang = 'zh-CN';
+            utterance.rate = 1.0;
+            
+            utterance.onstart = () => {
+                document.getElementById('result').innerHTML = '🔊 正在播放...';
+            };
+            
+            utterance.onend = () => {
+                document.getElementById('result').innerHTML = '✅ 播放完成！';
+            };
+            
+            utterance.onerror = (e) => {
+                document.getElementById('result').innerHTML = '❌ 播放失败：' + e.error;
+            };
+            
+            window.speechSynthesis.speak(utterance);
+        }
+    </script>
+</body>
+</html>
