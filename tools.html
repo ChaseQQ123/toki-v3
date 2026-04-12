@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOKI 工具箱 - 全能AI助手</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container { max-width: 1400px; margin: 0 auto; }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            padding: 20px;
+        }
+        
+        .header h1 {
+            font-size: 36px;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .header p {
+            font-size: 18px;
+            opacity: 0.95;
+        }
+        
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+        
+        .tool-card {
+            background: white;
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tool-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 50px rgba(0,0,0,0.18);
+        }
+        
+        .tool-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+        
+        .tool-icon {
+            font-size: 52px;
+            margin-bottom: 18px;
+            display: block;
+        }
+        
+        .tool-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .tool-desc {
+            font-size: 15px;
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .tool-badge {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .modal.active { display: flex; }
+        
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 35px;
+            max-width: 700px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .modal-title {
+            font-size: 26px;
+            font-weight: 700;
+            color: #333;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 32px;
+            color: #999;
+            cursor: pointer;
+            line-height: 1;
+        }
+        
+        .close-btn:hover { color: #333; }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .form-textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 35px;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 15px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .result-box {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9ff;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .result-title {
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 12px;
+        }
+        
+        .result-content {
+            color: #555;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        
+        .file-upload {
+            border: 2px dashed #667eea;
+            border-radius: 12px;
+            padding: 35px;
+            text-align: center;
+            background: #f8f9ff;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .file-upload:hover {
+            background: #f0f2ff;
+            border-color: #764ba2;
+        }
+        
+        .file-upload-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 { font-size: 28px; }
+            .tool-card { padding: 22px; }
+            .tool-icon { font-size: 42px; }
+            .modal-content { padding: 25px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛠️ TOKI 工具箱</h1>
+            <p>长文档解析 · PPT生成 · 数据分析 · 语音合成 · 智能体</p>
+        </div>
+        
+        <div class="tools-grid" id="toolsGrid">
+            <!-- 工具卡片将通过JS动态生成 -->
+        </div>
+    </div>
+    
+    <div class="modal" id="modal">
+        <div class="modal-content" id="modalContent">
+            <!-- 模态框内容 -->
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://localhost:8000'; // API待部署，功能暂不可用  // API地址（部署到阿里云后修改）
+        
+        const tools = [
+            {
+                id: 'parse-document',
+                icon: '📄',
+                title: '长文档解析',
+                desc: '上传PDF/Word/Excel，AI理解内容并回答问题',
+                badge: 'NEW'
+            },
+            {
+                id: 'generate-ppt',
+                icon: '📊',
+                title: 'PPT生成',
+                desc: '输入主题，自动生成PPT演示文稿',
+                badge: 'NEW'
+            },
+            {
+                id: 'analyze-excel',
+                icon: '📈',
+                title: '数据分析',
+                desc: '上传Excel，自动分析并生成图表',
+                badge: 'NEW'
+            },
+            {
+                id: 'text-to-speech',
+                icon: '🎙️',
+                title: '语音合成',
+                desc: '文字转语音，多种音色选择',
+                badge: 'NEW'
+            },
+            {
+                id: 'agent-execute',
+                icon: '🤖',
+                title: '智能体',
+                desc: '自动分解任务并执行',
+                badge: 'NEW'
+            },
+            {
+                id: 'image-to-pdf',
+                icon: '🖼️',
+                title: '图片转PDF',
+                desc: '将图片转换为PDF文件'
+            },
+            {
+                id: 'merge-pdf',
+                icon: '📑',
+                title: 'PDF合并',
+                desc: '将多个PDF合并为一个'
+            },
+            {
+                id: 'ocr',
+                icon: '📝',
+                title: 'OCR识别',
+                desc: '图片转文字，支持中英文'
+            },
+            {
+                id: 'scan-card',
+                icon: '💳',
+                title: '名片扫描',
+                desc: '扫描名片自动提取信息'
+            }
+        ];
+        
+        // 渲染工具卡片
+        function renderTools() {
+            const grid = document.getElementById('toolsGrid');
+            grid.innerHTML = tools.map(tool => `
+                <div class="tool-card" onclick="openTool('${tool.id}')">
+                    ${tool.badge ? `<span class="tool-badge">${tool.badge}</span>` : ''}
+                    <span class="tool-icon">${tool.icon}</span>
+                    <div class="tool-title">${tool.title}</div>
+                    <div class="tool-desc">${tool.desc}</div>
+                </div>
+            `).join('');
+        }
+        
+        // 打开工具
+        function openTool(toolId) {
+            const tool = tools.find(t => t.id === toolId);
+            const modal = document.getElementById('modal');
+            const content = document.getElementById('modalContent');
+            
+            let html = `
+                <div class="modal-header">
+                    <div class="modal-title">${tool.icon} ${tool.title}</div>
+                    <button class="close-btn" onclick="closeModal()">&times;</button>
+                </div>
+            `;
+            
+            // 根据不同工具显示不同表单
+            switch(toolId) {
+                case 'parse-document':
+                    html += getParseDocForm();
+                    break;
+                case 'generate-ppt':
+                    html += getPPTForm();
+                    break;
+                case 'analyze-excel':
+                    html += getExcelForm();
+                    break;
+                case 'text-to-speech':
+                    html += getTTSForm();
+                    break;
+                case 'agent-execute':
+                    html += getAgentForm();
+                    break;
+                default:
+                    html += '<p>功能开发中...</p>';
+            }
+            
+            content.innerHTML = html;
+            modal.classList.add('active');
+        }
+        
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+        
+        // 长文档解析表单
+        function getParseDocForm() {
+            return `
+                <form onsubmit="parseDocument(event)">
+                    <div class="form-group">
+                        <label class="form-label">上传文档</label>
+                        <div class="file-upload" onclick="document.getElementById('docFile').click()">
+                            <div class="file-upload-icon">📁</div>
+                            <div>点击上传文件</div>
+                            <div style="font-size: 14px; color: #999; margin-top: 8px;">支持 PDF, Word, Excel, TXT</div>
+                            <input type="file" id="docFile" style="display:none" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt" onchange="updateFileName(this)">
+                        </div>
+                        <div id="fileName" style="margin-top: 10px; color: #667eea; font-weight: 600;"></div>
+                    </div>
+                    <button type="submit" class="btn" id="parseDocBtn">开始解析</button>
+                </form>
+                <div id="parseResult"></div>
+            `;
+        }
+        
+        // PPT生成表单
+        function getPPTForm() {
+            return `
+                <form onsubmit="generatePPT(event)">
+                    <div class="form-group">
+                        <label class="form-label">演示文稿标题</label>
+                        <input type="text" class="form-input" id="pptTitle" placeholder="例如：产品介绍" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">幻灯片内容（每页一行，格式：标题|内容）</label>
+                        <textarea class="form-textarea" id="pptSlides" rows="6" placeholder="产品概述|我们的产品是...&#10;市场分析|市场规模达到...&#10;核心优势|我们具有..."></textarea>
+                    </div>
+                    <button type="submit" class="btn" id="pptBtn">生成PPT</button>
+                </form>
+                <div id="pptResult"></div>
+            `;
+        }
+        
+        // 数据分析表单
+        function getExcelForm() {
+            return `
+                <form onsubmit="analyzeExcel(event)">
+                    <div class="form-group">
+                        <label class="form-label">上传Excel文件</label>
+                        <div class="file-upload" onclick="document.getElementById('excelFile').click()">
+                            <div class="file-upload-icon">📊</div>
+                            <div>点击上传Excel</div>
+                            <input type="file" id="excelFile" style="display:none" accept=".xls,.xlsx" onchange="updateExcelName(this)">
+                        </div>
+                        <div id="excelName" style="margin-top: 10px; color: #667eea; font-weight: 600;"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">分析类型</label>
+                        <select class="form-select" id="analysisType">
+                            <option value="summary">统计摘要</option>
+                            <option value="chart">生成图表</option>
+                            <option value="correlation">相关性分析</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">图表类型</label>
+                        <select class="form-select" id="chartType">
+                            <option value="bar">柱状图</option>
+                            <option value="line">折线图</option>
+                            <option value="pie">饼图</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn" id="excelBtn">开始分析</button>
+                </form>
+                <div id="excelResult"></div>
+            `;
+        }
+        
+        // 语音合成表单
+        function getTTSForm() {
+            return `
+                <form onsubmit="textToSpeech(event)">
+                    <div class="form-group">
+                        <label class="form-label">输入文字</label>
+                        <textarea class="form-textarea" id="ttsText" rows="4" placeholder="请输入要转换的文字..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">选择音色</label>
+                        <select class="form-select" id="voiceSelect">
+                            <option value="zh-CN-YunxiaNeural">👨‍👦 男童声（可爱）</option>
+                            <option value="zh-CN-YunxiNeural">👨 男青年声</option>
+                            <option value="zh-CN-XiaoxiaoNeural">👩 女青年声</option>
+                            <option value="zh-CN-XiaoyiNeural">👧 女童声</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn" id="ttsBtn">生成语音</button>
+                </form>
+                <div id="ttsResult"></div>
+            `;
+        }
+        
+        // 智能体表单
+        function getAgentForm() {
+            return `
+                <form onsubmit="executeAgent(event)">
+                    <div class="form-group">
+                        <label class="form-label">描述你的任务</label>
+                        <textarea class="form-textarea" id="agentTask" rows="4" placeholder="例如：帮我写一份市场调研报告..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn" id="agentBtn">开始执行</button>
+                </form>
+                <div id="agentResult"></div>
+            `;
+        }
+        
+        // 更新文件名显示
+        function updateFileName(input) {
+            document.getElementById('fileName').textContent = '已选择: ' + input.files[0].name;
+        }
+        
+        function updateExcelName(input) {
+            document.getElementById('excelName').textContent = '已选择: ' + input.files[0].name;
+        }
+        
+        // 文档解析
+        async function parseDocument(e) {
+            e.preventDefault();
+            const btn = document.getElementById('parseDocBtn');
+            const result = document.getElementById('parseResult');
+            const file = document.getElementById('docFile').files[0];
+            
+            if (!file) {
+                alert('请选择文件');
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span>解析中...';
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const response = await fetch(API_BASE + '/api/parse-document', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                result.innerHTML = `
+                    <div class="result-box">
+                        <div class="result-title">✅ 解析成功</div>
+                        <div class="result-content">
+文件名: ${data.filename}
+字符数: ${data.length}
+
+${data.text.substring(0, 1000)}${data.text.length > 1000 ? '...' : ''}
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                result.innerHTML = `<div class="result-box"><div class="result-content" style="color: red;">解析失败: ${error.message}</div></div>`;
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = '开始解析';
+        }
+        
+        // PPT生成
+        async function generatePPT(e) {
+            e.preventDefault();
+            const btn = document.getElementById('pptBtn');
+            const result = document.getElementById('pptResult');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span>生成中...';
+            
+            try {
+                const title = document.getElementById('pptTitle').value;
+                const slidesText = document.getElementById('pptSlides').value;
+                
+                // 解析幻灯片
+                const slides = slidesText.split('\n')
+                    .filter(line => line.trim())
+                    .map(line => {
+                        const [title, content] = line.split('|');
+                        return { title: title || '', content: content || '' };
+                    });
+                
+                const response = await fetch(
+                    `${API_BASE}/api/generate-ppt?title=${encodeURIComponent(title)}&slides=${encodeURIComponent(JSON.stringify(slides))}`,
+                    { method: 'POST' }
+                );
+                
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                
+                result.innerHTML = `
+                    <div class="result-box">
+                        <div class="result-title">✅ PPT生成成功</div>
+                        <a href="${url}" download="${title}.pptx" class="btn" style="display: inline-block; text-align: center; text-decoration: none; margin-top: 15px;">下载PPT</a>
+                    </div>
+                `;
+            } catch (error) {
+                result.innerHTML = `<div class="result-box"><div class="result-content" style="color: red;">生成失败: ${error.message}</div></div>`;
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = '生成PPT';
+        }
+        
+        // 数据分析
+        async function analyzeExcel(e) {
+            e.preventDefault();
+            const btn = document.getElementById('excelBtn');
+            const result = document.getElementById('excelResult');
+            const file = document.getElementById('excelFile').files[0];
+            
+            if (!file) {
+                alert('请选择Excel文件');
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span>分析中...';
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('analysis_type', document.getElementById('analysisType').value);
+                formData.append('chart_type', document.getElementById('chartType').value);
+                
+                const response = await fetch(API_BASE + '/api/analyze-excel', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                let html = `
+                    <div class="result-box">
+                        <div class="result-title">✅ 分析完成</div>
+                        <div class="result-content">
+行数: ${data.shape.rows}
+列数: ${data.shape.columns}
+列名: ${data.columns.join(', ')}
+                        </div>
+                    </div>
+                `;
+                
+                if (data.chart_path) {
+                    const chartUrl = API_BASE + '/api/download-chart/' + data.chart_path.split('/').pop();
+                    html += `<img src="${chartUrl}" style="width: 100%; margin-top: 15px; border-radius: 8px;">`;
+                }
+                
+                result.innerHTML = html;
+            } catch (error) {
+                result.innerHTML = `<div class="result-box"><div class="result-content" style="color: red;">分析失败: ${error.message}</div></div>`;
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = '开始分析';
+        }
+        
+        // 语音合成
+        async function textToSpeech(e) {
+            e.preventDefault();
+            const btn = document.getElementById('ttsBtn');
+            const result = document.getElementById('ttsResult');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span>生成中...';
+            
+            try {
+                const text = document.getElementById('ttsText').value;
+                const voice = document.getElementById('voiceSelect').value;
+                
+                const response = await fetch(
+                    `${API_BASE}/api/text-to-speech?text=${encodeURIComponent(text)}&voice=${voice}`,
+                    { method: 'POST' }
+                );
+                
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                
+                result.innerHTML = `
+                    <div class="result-box">
+                        <div class="result-title">✅ 语音生成成功</div>
+                        <audio controls src="${url}" style="width: 100%; margin-top: 15px;"></audio>
+                        <a href="${url}" download="speech.mp3" class="btn" style="display: inline-block; text-align: center; text-decoration: none; margin-top: 15px;">下载音频</a>
+                    </div>
+                `;
+            } catch (error) {
+                result.innerHTML = `<div class="result-box"><div class="result-content" style="color: red;">生成失败: ${error.message}</div></div>`;
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = '生成语音';
+        }
+        
+        // 智能体执行
+        async function executeAgent(e) {
+            e.preventDefault();
+            const btn = document.getElementById('agentBtn');
+            const result = document.getElementById('agentResult');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span>执行中...';
+            
+            try {
+                const task = document.getElementById('agentTask').value;
+                
+                const response = await fetch(
+                    `${API_BASE}/api/agent-execute?task=${encodeURIComponent(task)}`,
+                    { method: 'POST' }
+                );
+                
+                const data = await response.json();
+                
+                result.innerHTML = `
+                    <div class="result-box">
+                        <div class="result-title">✅ 任务已分解</div>
+                        <div class="result-content">
+${data.steps.map((step, i) => `
+步骤${step.step}: ${step.action} - ${step.status === 'ready' ? '✅ 准备就绪' : '⏳ 等待中'}
+`).join('')}
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                result.innerHTML = `<div class="result-box"><div class="result-content" style="color: red;">执行失败: ${error.message}</div></div>`;
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = '开始执行';
+        }
+        
+        // 初始化
+        renderTools();
+        
+        // 点击模态框外部关闭
+        document.getElementById('modal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+    </script>
+</body>
+</html>
