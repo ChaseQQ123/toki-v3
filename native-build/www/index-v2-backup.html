@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOKI - 全能AI助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .app-container {
+            max-width: 480px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 头部 */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .logo-icon {
+            font-size: 24px;
+        }
+        
+        .logo-text {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        /* 功能导航 */
+        .feature-nav {
+            display: flex;
+            overflow-x: auto;
+            padding: 10px;
+            background: #f8f9fa;
+            gap: 8px;
+        }
+        
+        .feature-nav::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 16px;
+            background: white;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 70px;
+        }
+        
+        .nav-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .nav-item.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .nav-icon {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+        
+        .nav-label {
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        
+        /* 内容区域 */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        /* 功能卡片 */
+        .feature-cards {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .feature-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .feature-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+        }
+        
+        .card-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+        
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .card-desc {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        /* 对话区域 */
+        .chat-area {
+            display: none;
+        }
+        
+        .chat-area.active {
+            display: block;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 12px;
+            max-width: 80%;
+        }
+        
+        .message.user {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-left: auto;
+        }
+        
+        .message.bot {
+            background: #f8f9fa;
+            color: #333;
+        }
+        
+        /* 输入区域 */
+        .input-area {
+            padding: 15px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .input-wrapper input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 24px;
+            outline: none;
+        }
+        
+        .input-wrapper input:focus {
+            border-color: #667eea;
+        }
+        
+        .send-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 24px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        /* 模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .modal-close {
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .modal-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .modal-textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            min-height: 100px;
+        }
+        
+        .modal-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .app-container {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 头部 -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">🤖</span>
+                <span class="logo-text">TOKI</span>
+            </div>
+            <div>💎 10,000</div>
+        </header>
+        
+        <!-- 功能导航 -->
+        <nav class="feature-nav">
+            <div class="nav-item active" onclick="switchTab('chat')">
+                <span class="nav-icon">💬</span>
+                <span class="nav-label">对话</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('write')">
+                <span class="nav-icon">📝</span>
+                <span class="nav-label">写作</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('learn')">
+                <span class="nav-icon">📚</span>
+                <span class="nav-label">学习</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('tools')">
+                <span class="nav-icon">🛠️</span>
+                <span class="nav-label">工具</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('fun')">
+                <span class="nav-icon">🎭</span>
+                <span class="nav-label">娱乐</span>
+            </div>
+        </nav>
+        
+        <!-- 内容区域 -->
+        <main class="content">
+            <!-- 对话 -->
+            <div id="chatTab" class="chat-area active">
+                <div class="message bot">
+                    你好！我是TOKI，你的全能AI助手。✨<br><br>
+                    我可以帮你：<br>
+                    💬 智能对话问答<br>
+                    📝 各种文案写作<br>
+                    📚 学习辅导<br>
+                    🎨 图像生成<br><br>
+                    有什么我可以帮你的吗？
+                </div>
+            </div>
+            
+            <!-- 写作 -->
+            <div id="writeTab" class="chat-area">
+                <div class="feature-cards">
+                    <div class="feature-card" onclick="openWritingModal('moments')">
+                        <div class="card-icon">💬</div>
+                        <div class="card-title">朋友圈文案</div>
+                        <div class="card-desc">快速生成朋友圈文案</div>
+                    </div>
+                    
+                    <div class="feature-card" onclick="openWritingModal('xiaohongshu')">
+                        <div class="card-icon">📕</div>
+                        <div class="card-title">小红书文案</div>
+                        <div class="card-desc">爆款笔记一键生成</div>
+                    </div>
+                    
+                    <div class="feature-card" onclick="openWritingModal('email')">
+                        <div class="card-icon">📧</div>
+                        <div class="card-title">邮件写作</div>
+                        <div class="card-desc">商务邮件快速生成</div>
+                    </div>
+                    
+                    <div class="feature-card" onclick="openWritingModal('article')">
+                        <div class="card-icon">📄</div>
+                        <div class="card-title">文章创作</div>
+                        <div class="card-desc">大纲+内容生成</div>
+                    </div>
+                    
+                    <div class="feature-card" onclick="openWritingModal('translate')">
+                        <div class="card-icon">🌐</div>
+                        <div class="card-title">翻译</div>
+                        <div class="card-desc">多语言翻译</div>
+                    </div>
+                    
+                    <div class="feature-card" onclick="openWritingModal('summary')">
+                        <div class="card-icon">📊</div>
+                        <div class="card-title">内容总结</div>
+                        <div class="card-desc">长文快速总结</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 学习 -->
+            <div id="learnTab" class="chat-area">
+                <div class="feature-cards">
+                    <div class="feature-card" onclick="openLearningModal('homework')">
+                        <div class="card-icon">✏️</div>
+                        <div class="card-title">作业辅导</div>
+                        <div class="card-desc">题目解答+讲解</div>
+                    </div>
+                    
+                    <div class="feature-card" onclick="openLearningModal('explain')">
+                        <div class="card-icon">💡</div>
+                        <div class="card-title">知识讲解</div>
+                        <div class="card-desc">通俗易懂解释概念</div>
+                    </div>
+                    
+                    <div class="feature-card" onclick="openLearningModal('english')">
+                        <div class="card-icon">🔤</div>
+                        <div class="card-title">英语学习</div>
+                        <div class="card-desc">语法、翻译、作文</div>
+                    </div>
+                    
+                    <div class="feature-card" onclick="openLearningModal('plan')">
+                        <div class="card-icon">📅</div>
+                        <div class="card-title">学习计划</div>
+                        <div class="card-desc">制定学习计划</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 工具 -->
+            <div id="toolsTab" class="chat-area">
+                <div class="feature-cards">
+                    <div class="feature-card" onclick="openToolModal('image')">
+                        <div class="card-icon">🎨</div>
+                        <div class="card-title">图像生成</div>
+                        <div class="card-desc">文字生成图片</div>
+                    </div>
+                    
+                    <div class="feature-card" onclick="openToolModal('vision')">
+                        <div class="card-icon">📸</div>
+                        <div class="card-title">图像识别</div>
+                        <div class="card-desc">上传图片识别</div>
+                    </div>
+                    
+                    <div class="feature-card" onclick="window.location.href='video-call.html'">
+                        <div class="card-icon">📹</div>
+                        <div class="card-title">视频通话</div>
+                        <div class="card-desc">P2P视频聊天</div>
+                    </div>
+                    
+                    <div class="feature-card" onclick="openToolModal('voice')">
+                        <div class="card-icon">🎤</div>
+                        <div class="card-title">语音对话</div>
+                        <div class="card-desc">语音实时对话</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 娱乐 -->
+            <div id="funTab" class="chat-area">
+                <div class="feature-cards">
+                    <div class="feature-card" onclick="openFunModal('roleplay')">
+                        <div class="card-icon">🎭</div>
+                        <div class="card-title">角色扮演</div>
+                        <div class="card-desc">与AI角色对话</div>
+                    </div>
+                    
+                    <div class="feature-card" onclick="openFunModal('story')">
+                        <div class="card-icon">📖</div>
+                        <div class="card-title">故事创作</div>
+                        <div class="card-desc">生成精彩故事</div>
+                    </div>
+                    
+                    <div class="feature-card" onclick="openFunModal('joke')">
+                        <div class="card-icon">😂</div>
+                        <div class="card-title">讲笑话</div>
+                        <div class="card-desc">轻松幽默</div>
+                    </div>
+                    
+                    <div class="feature-card" onclick="openFunModal('chat')">
+                        <div class="card-icon">💬</div>
+                        <div class="card-title">聊天陪伴</div>
+                        <div class="card-desc">情感支持</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- 输入区域 -->
+        <footer class="input-area">
+            <div class="input-wrapper">
+                <input type="text" id="userInput" placeholder="输入你的问题..." autocomplete="off">
+                <button class="send-btn" onclick="sendMessage()">发送</button>
+            </div>
+        </footer>
+    </div>
+    
+    <!-- 写作模态框 -->
+    <div class="modal" id="writingModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title" id="modalTitle">写作助手</span>
+                <span class="modal-close" onclick="closeModal()">×</span>
+            </div>
+            <textarea class="modal-textarea" id="modalInput" placeholder="输入内容..."></textarea>
+            <button class="modal-btn" onclick="generateContent()">生成</button>
+        </div>
+    </div>
+    
+    <script>
+        // API配置
+        const API_KEY = 'c4911cf15f844167bd26301e25622cf1.n1BU10ytXbnQ6N5d';
+        const BASE_URL = 'https://open.bigmodel.cn/api/paas/v4';
+        
+        // 切换标签页
+        function switchTab(tab) {
+            // 隐藏所有标签页
+            document.querySelectorAll('.chat-area').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // 显示选中的标签页
+            document.getElementById(tab + 'Tab').classList.add('active');
+            
+            // 更新导航栏
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+        }
+        
+        // 打开写作模态框
+        function openWritingModal(type) {
+            const titles = {
+                moments: '朋友圈文案',
+                xiaohongshu: '小红书文案',
+                email: '邮件写作',
+                article: '文章创作',
+                translate: '翻译',
+                summary: '内容总结'
+            };
+            
+            document.getElementById('modalTitle').textContent = titles[type];
+            document.getElementById('modalInput').placeholder = getPlaceholder(type);
+            document.getElementById('writingModal').classList.add('active');
+            document.getElementById('writingModal').dataset.type = type;
+        }
+        
+        // 获取占位符
+        function getPlaceholder(type) {
+            const placeholders = {
+                moments: '输入你想分享的内容，例如：今天去吃了火锅',
+                xiaohongshu: '输入笔记主题，例如：成都美食推荐',
+                email: '输入邮件内容，例如：向领导请假',
+                article: '输入文章主题，例如：人工智能的未来',
+                translate: '输入要翻译的内容',
+                summary: '粘贴需要总结的内容'
+            };
+            return placeholders[type];
+        }
+        
+        // 关闭模态框
+        function closeModal() {
+            document.getElementById('writingModal').classList.remove('active');
+        }
+        
+        // 生成内容
+        async function generateContent() {
+            const type = document.getElementById('writingModal').dataset.type;
+            const input = document.getElementById('modalInput').value;
+            
+            if (!input) {
+                alert('请输入内容');
+                return;
+            }
+            
+            // 构建提示词
+            const prompts = {
+                moments: `帮我写一条朋友圈文案，内容是：${input}。要求：有趣、接地气、适合发朋友圈`,
+                xiaohongshu: `帮我写一篇小红书笔记，主题是：${input}。要求：包含标题、正文、标签，风格活泼，适合小红书`,
+                email: `帮我写一封邮件，内容是：${input}。要求：格式规范、语言得体`,
+                article: `帮我写一篇文章，主题是：${input}。要求：结构清晰、内容丰富、有深度`,
+                translate: `请翻译以下内容：${input}`,
+                summary: `请总结以下内容：${input}`
+            };
+            
+            const prompt = prompts[type];
+            
+            // 调用API
+            try {
+                const response = await fetch(`${BASE_URL}/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: 'glm-4-flash',
+                        messages: [{role: 'user', content: prompt}]
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const result = data.choices[0].message.content;
+                    
+                    // 切换到对话标签页
+                    switchTab('chat');
+                    
+                    // 添加消息
+                    addMessage(input, 'user');
+                    addMessage(result, 'bot');
+                    
+                    // 关闭模态框
+                    closeModal();
+                }
+            } catch (error) {
+                console.error('生成失败:', error);
+                alert('生成失败，请重试');
+            }
+        }
+        
+        // 发送消息
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            addMessage(message, 'user');
+            input.value = '';
+            
+            try {
+                const response = await fetch(`${BASE_URL}/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: 'glm-4-flash',
+                        messages: [{role: 'user', content: message}]
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const result = data.choices[0].message.content;
+                    addMessage(result, 'bot');
+                }
+            } catch (error) {
+                console.error('发送失败:', error);
+                addMessage('请求失败，请重试', 'bot');
+            }
+        }
+        
+        // 添加消息
+        function addMessage(content, type) {
+            const chatTab = document.getElementById('chatTab');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.textContent = content;
+            chatTab.appendChild(messageDiv);
+            chatTab.scrollTop = chatTab.scrollHeight;
+        }
+        
+        // 回车发送
+        document.getElementById('userInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        // 空函数（占位）
+        function openLearningModal(type) {
+            alert('学习功能开发中，敬请期待！');
+        }
+        
+        function openToolModal(type) {
+            if (type === 'image') {
+                const prompt = prompt('请输入图片描述：');
+                if (prompt) {
+                    // 调用图像生成API
+                    generateImage(prompt);
+                }
+            } else {
+                alert('功能开发中！');
+            }
+        }
+        
+        function openFunModal(type) {
+            alert('娱乐功能开发中，敬请期待！');
+        }
+        
+        async function generateImage(prompt) {
+            try {
+                const response = await fetch(`${BASE_URL}/images/generations`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: 'cogview-3-flash',
+                        prompt: prompt
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const imageUrl = data.data[0].url;
+                    
+                    switchTab('chat');
+                    addMessage(`生成图片：${prompt}`, 'user');
+                    
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = 'message bot';
+                    messageDiv.innerHTML = `<img src="${imageUrl}" style="max-width:100%;border-radius:8px;">`;
+                    document.getElementById('chatTab').appendChild(messageDiv);
+                }
+            } catch (error) {
+                console.error('生成图片失败:', error);
+            }
+        }
+    </script>
+</body>
+</html>

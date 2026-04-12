@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TOKI - AI视频通话</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 头部 */
+        .header {
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .timer {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        /* AI形象区域 */
+        .ai-avatar-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .ai-avatar {
+            width: 200px;
+            height: 200px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 100px;
+            margin-bottom: 20px;
+            animation: pulse 2s ease-in-out infinite;
+            box-shadow: 0 0 60px rgba(255,255,255,0.3);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .ai-status {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        
+        .ai-message {
+            background: rgba(255,255,255,0.1);
+            padding: 15px 20px;
+            border-radius: 20px;
+            max-width: 80%;
+            text-align: center;
+            font-size: 16px;
+            line-height: 1.6;
+            min-height: 60px;
+            display: none; /* 隐藏消息区域 */
+        }
+        
+        /* 对话历史 - 隐藏 */
+        .chat-history {
+            display: none !important;
+        }
+        
+        .chat-message {
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-radius: 12px;
+            font-size: 14px;
+        }
+        
+        .chat-message.user {
+            background: rgba(255,255,255,0.2);
+            margin-left: auto;
+            max-width: 70%;
+        }
+        
+        .chat-message.ai {
+            background: rgba(0,0,0,0.2);
+            max-width: 70%;
+        }
+        
+        /* 控制按钮 */
+        .controls {
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        
+        .control-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .start-btn {
+            background: #4CAF50;
+            color: white;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        .start-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .end-btn {
+            background: #ff4444;
+            color: white;
+        }
+        
+        .end-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .mute-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+        
+        .mute-btn.active {
+            background: #ff8800;
+        }
+        
+        /* 提示信息 */
+        .hint {
+            text-align: center;
+            padding: 10px 20px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.7);
+        }
+        
+        /* Safari提示 */
+        .safari-notice {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.95);
+            color: #333;
+            padding: 15px 20px;
+            border-radius: 12px;
+            font-size: 13px;
+            z-index: 100;
+            max-width: 90%;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        .safari-notice button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <button class="back-btn" onclick="goBack()">← 返回</button>
+            <div class="timer" id="timer">00:00</div>
+        </div>
+        
+        <!-- AI形象区域 -->
+        <div class="ai-avatar-container">
+            <div class="ai-avatar" id="aiAvatar">🤖</div>
+            <div class="ai-status" id="aiStatus">点击开始与TOKI视频通话</div>
+            <div class="ai-message" id="aiMessage">你好！我是TOKI，你的AI助手。点击下方绿色按钮开始语音对话吧！</div>
+        </div>
+        
+        <!-- 对话历史 -->
+        <div class="chat-history" id="chatHistory" style="display:none;"></div>
+        
+        <!-- 控制按钮 -->
+        <div class="controls">
+            <button class="mute-btn" id="muteBtn" onclick="toggleMute()" style="display:none;">🎤</button>
+            <button class="start-btn" id="startBtn" onclick="startCall()">📞</button>
+            <button class="end-btn" id="endBtn" onclick="endCall()" style="display:none;">📞</button>
+        </div>
+        
+        <!-- 提示 -->
+        <div class="hint" id="hint">推荐使用Chrome浏览器获得最佳体验</div>
+    </div>
+    
+    <script>
+        // API配置
+        const API_KEY = 'c4911cf15f844167bd26301e25622cf1.n1BU10ytXbnQ6N5d';
+        const BASE_URL = 'https://open.bigmodel.cn/api/paas/v4';
+        
+        // 状态管理
+        let isCallActive = false;
+        let isMuted = false;
+        let callStartTime = null;
+        let timerInterval = null;
+        let recognition = null;
+        let synthesis = window.speechSynthesis;
+        let conversationHistory = [];
+        let isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        
+        // 显示Safari提示
+        if (isSafari) {
+            document.getElementById('hint').textContent = '检测到Safari，语音功能可能受限';
+        }
+        
+        // 初始化语音识别
+        function initSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            if (!SpeechRecognition) {
+                const message = '⚠️ 你的浏览器不支持语音识别\n\n请使用：\n• Chrome浏览器（推荐）\n• Edge浏览器\n\n或使用主页的"对话"功能进行文字交流';
+                alert(message);
+                return false;
+            }
+            
+            recognition = new SpeechRecognition();
+            recognition.lang = 'zh-CN';
+            
+            // Safari特殊处理：不支持连续识别
+            if (isSafari) {
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                console.log('📱 Safari模式：单次识别');
+            } else {
+                recognition.continuous = true;
+                recognition.interimResults = false;
+            }
+            
+            recognition.onresult = async (event) => {
+                const last = event.results.length - 1;
+                const text = event.results[last][0].transcript;
+                
+                console.log('✅ 识别到语音:', text);
+                addChatMessage(text, 'user');
+                await processUserInput(text);
+            };
+            
+            recognition.onerror = (event) => {
+                console.error('❌ 语音识别错误:', event.error);
+                
+                if (event.error === 'not-allowed') {
+                    alert('❌ 麦克风权限被拒绝\n\n请在浏览器设置中允许麦克风权限');
+                } else if (event.error === 'no-speech') {
+                    console.log('未检测到语音');
+                } else {
+                    updateAIStatus('语音识别出错: ' + event.error);
+                }
+            };
+            
+            recognition.onend = () => {
+                console.log('语音识别结束');
+                if (isCallActive && !isMuted) {
+                    // Safari需要延迟重启
+                    const delay = isSafari ? 1000 : 500;
+                    setTimeout(() => {
+                        if (isCallActive && !isMuted && recognition) {
+                            try {
+                                recognition.start();
+                                console.log('🔄 重新启动语音识别');
+                            } catch (e) {
+                                console.error('重启失败:', e);
+                            }
+                        }
+                    }, delay);
+                }
+            };
+            
+            return true;
+        }
+        
+        // 返回
+        function goBack() {
+            endCall();
+            window.location.href = 'index.html';
+        }
+        
+        // 开始通话
+        function startCall() {
+            if (!initSpeechRecognition()) {
+                return;
+            }
+            
+            isCallActive = true;
+            callStartTime = Date.now();
+            
+            // 更新UI
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('endBtn').style.display = 'flex';
+            document.getElementById('muteBtn').style.display = 'flex';
+            document.getElementById('chatHistory').style.display = 'block';
+            document.getElementById('hint').textContent = '正在聆听...说出你的问题';
+            
+            // 启动计时器
+            timerInterval = setInterval(updateTimer, 1000);
+            
+            // 开始语音识别
+            try {
+                recognition.start();
+                console.log('🎤 语音识别已启动');
+            } catch (e) {
+                console.error('启动失败:', e);
+            }
+            
+            // AI问候（延迟确保语音引擎加载）
+            setTimeout(() => {
+                const greeting = '你好！我是TOKI，有什么可以帮你的吗？';
+                speak(greeting);
+                updateAIMessage(greeting);
+                updateAIStatus('正在聆听...');
+            }, 1000);
+        }
+        
+        // 结束通话
+        function endCall() {
+            isCallActive = false;
+            
+            // 停止语音识别
+            if (recognition) {
+                try {
+                    recognition.stop();
+                } catch (e) {}
+            }
+            
+            // 停止语音合成
+            if (synthesis) {
+                synthesis.cancel();
+            }
+            
+            // 停止计时器
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            
+            // 更新UI
+            document.getElementById('startBtn').style.display = 'flex';
+            document.getElementById('endBtn').style.display = 'none';
+            document.getElementById('muteBtn').style.display = 'none';
+            document.getElementById('aiStatus').textContent = '通话已结束';
+            document.getElementById('hint').textContent = '点击绿色按钮重新开始';
+        }
+        
+        // 切换静音
+        function toggleMute() {
+            isMuted = !isMuted;
+            const muteBtn = document.getElementById('muteBtn');
+            muteBtn.textContent = isMuted ? '🔇' : '🎤';
+            muteBtn.classList.toggle('active', isMuted);
+            
+            if (isMuted) {
+                if (recognition) recognition.stop();
+                updateAIStatus('已静音');
+            } else {
+                if (recognition) {
+                    try {
+                        recognition.start();
+                        updateAIStatus('正在聆听...');
+                    } catch (e) {
+                        console.error('重启失败:', e);
+                    }
+                }
+            }
+        }
+        
+        // 处理用户输入
+        async function processUserInput(text) {
+            updateAIStatus('思考中...');
+            
+            try {
+                // 添加到对话历史
+                conversationHistory.push({ role: 'user', content: text });
+                
+                // 调用AI API
+                const response = await fetch(`${BASE_URL}/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: 'glm-4-flash',
+                        messages: [
+                            {
+                                role: 'system',
+                                content: '你是TOKI，一个AI语音助手。用户正在通过语音与你实时对话，你的回复会被语音合成播放出来。请用自然、口语化的方式回答，就像在打电话一样。回答要简洁友好，控制在30字以内。不要提到"文本"、"打字"等，这是纯语音对话。'
+                            },
+                            ...conversationHistory.slice(-10)
+                        ]
+                    })
+                });
+                
+                const data = await response.json();
+                const reply = data.choices[0].message.content;
+                
+                // 添加到对话历史
+                conversationHistory.push({ role: 'assistant', content: reply });
+                
+                // 更新UI
+                addChatMessage(reply, 'ai');
+                updateAIMessage(reply);
+                updateAIStatus('正在聆听...');
+                
+                // 语音输出
+                speak(reply);
+                
+            } catch (error) {
+                console.error('API调用失败:', error);
+                updateAIStatus('网络错误，请重试');
+            }
+        }
+        
+        // 语音合成
+        function speak(text) {
+            if (!synthesis) {
+                console.warn('浏览器不支持语音合成');
+                return;
+            }
+            
+            synthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-CN';
+            utterance.rate = isSafari ? 0.9 : 1.0;
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+            
+            // Safari需要等待语音列表加载
+            const setVoice = () => {
+                const voices = synthesis.getVoices();
+                console.log('可用语音:', voices.map(v => `${v.name}(${v.lang})`).join(', '));
+                
+                // 优先使用中文语音
+                const zhVoice = voices.find(v => v.lang.includes('zh'));
+                if (zhVoice) {
+                    utterance.voice = zhVoice;
+                    console.log('使用语音:', zhVoice.name);
+                }
+            };
+            
+            // Safari特殊处理
+            if (isSafari && synthesis.getVoices().length === 0) {
+                synthesis.onvoiceschanged = setVoice;
+            } else {
+                setVoice();
+            }
+            
+            utterance.onstart = () => {
+                console.log('🔊 播放语音:', text);
+                updateAIStatus('正在说话...');
+                document.getElementById('aiAvatar').style.animation = 'pulse 0.5s ease-in-out infinite';
+                
+                // 说话时暂停语音识别
+                if (recognition && !isSafari) {
+                    try {
+                        recognition.stop();
+                    } catch (e) {}
+                }
+            };
+            
+            utterance.onend = () => {
+                console.log('语音播放结束');
+                document.getElementById('aiAvatar').style.animation = 'pulse 2s ease-in-out infinite';
+                
+                // 说话结束后恢复语音识别
+                if (isCallActive && !isMuted) {
+                    setTimeout(() => {
+                        if (recognition && isCallActive && !isMuted) {
+                            try {
+                                recognition.start();
+                                updateAIStatus('正在聆听...');
+                            } catch (e) {
+                                console.error('重启识别失败:', e);
+                            }
+                        }
+                    }, 500);
+                }
+            };
+            
+            utterance.onerror = (e) => {
+                console.error('语音合成错误:', e);
+            };
+            
+            synthesis.speak(utterance);
+        }
+        
+        // 更新计时器
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - callStartTime) / 1000);
+            const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const seconds = (elapsed % 60).toString().padStart(2, '0');
+            document.getElementById('timer').textContent = `${minutes}:${seconds}`;
+        }
+        
+        // 更新AI状态
+        function updateAIStatus(status) {
+            document.getElementById('aiStatus').textContent = status;
+        }
+        
+        // 更新AI消息
+        function updateAIMessage(message) {
+            document.getElementById('aiMessage').textContent = message;
+        }
+        
+        // 添加聊天消息
+        function addChatMessage(text, type) {
+            const chatHistory = document.getElementById('chatHistory');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${type}`;
+            messageDiv.textContent = text;
+            chatHistory.appendChild(messageDiv);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+        
+        // 加载语音列表
+        if (synthesis) {
+            synthesis.getVoices();
+            synthesis.onvoiceschanged = () => {
+                const voices = synthesis.getVoices();
+                console.log('已加载', voices.length, '个语音');
+            };
+        }
+    </script>
+</body>
+</html>

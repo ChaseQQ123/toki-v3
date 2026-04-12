@@ -1,0 +1,11 @@
+{
+  "appId": "com.toknm.toki",
+  "appName": "TOKI",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}

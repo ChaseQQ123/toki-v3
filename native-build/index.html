@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TOKI V3 - 超级AI助手（预览版）</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .app-container {
+            max-width: 480px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 头部 */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo { display: flex; align-items: center; gap: 8px; }
+        .logo-icon { font-size: 24px; }
+        .logo-text { font-size: 20px; font-weight: bold; }
+        .token-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        
+        /* 功能导航 */
+        .feature-nav {
+            display: flex;
+            overflow-x: auto;
+            padding: 10px;
+            background: #f8f9fa;
+            gap: 8px;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px 14px;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 60px;
+        }
+        .nav-item:hover, .nav-item.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: translateY(-2px);
+        }
+        .nav-icon { font-size: 20px; margin-bottom: 3px; }
+        .nav-label { font-size: 11px; }
+        
+        /* 内容区域 */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        /* 消息样式 */
+        .message-wrapper {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .bot-avatar {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .message {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+        .message.bot {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .message.user {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-left: auto;
+        }
+        
+        /* 输入区域 */
+        .input-area {
+            padding: 10px;
+            background: #fff;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 8px;
+        }
+        .input-area input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 20px;
+            outline: none;
+            font-size: 14px;
+        }
+        .input-area input:focus {
+            border-color: #667eea;
+        }
+        .send-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        /* 记忆统计 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .stat-label {
+            font-size: 11px;
+            opacity: 0.9;
+        }
+        
+        /* 欢迎消息 */
+        .welcome {
+            text-align: center;
+            padding: 30px 20px;
+        }
+        .welcome-icon {
+            font-size: 60px;
+            margin-bottom: 15px;
+        }
+        .welcome-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .welcome-desc {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .features-list {
+            text-align: left;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+        .feature-item {
+            padding: 8px 0;
+            font-size: 13px;
+            color: #333;
+        }
+        .feature-item::before {
+            content: '✅ ';
+        }
+        
+        /* 提示 */
+        .notice {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 头部 -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">🤖</span>
+                <span class="logo-text">TOKI V3</span>
+            </div>
+            <div class="token-badge">💎 10,000,000</div>
+        </header>
+        
+        <!-- 功能导航 -->
+        <div class="feature-nav">
+            <div class="nav-item active" onclick="switchTab('chat')">
+                <span class="nav-icon">💬</span>
+                <span class="nav-label">对话</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('memory')">
+                <span class="nav-icon">🧠</span>
+                <span class="nav-label">记忆</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('voice')">
+                <span class="nav-icon">🎤</span>
+                <span class="nav-label">语音</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('image')">
+                <span class="nav-icon">🎨</span>
+                <span class="nav-label">图像</span>
+            </div>
+        </div>
+        
+        <!-- 内容区域 -->
+        <div class="content">
+            <!-- 对话标签页 -->
+            <div id="chatTab" class="tab-content active">
+                <div class="notice">
+                    ⚠️ 这是网页预览版。完整功能请下载到本地运行。
+                </div>
+                <div id="chatMessages">
+                    <div class="welcome">
+                        <div class="welcome-icon">🤖</div>
+                        <div class="welcome-title">TOKI V3.0</div>
+                        <div class="welcome-desc">
+                            超级AI助手 - 已集成PicoClaw记忆系统<br>
+                            支持：对话、记忆、语音、图像生成
+                        </div>
+                        <div class="features-list">
+                            <div class="feature-item">1000万免费Token起步</div>
+                            <div class="feature-item">PicoClaw长期记忆系统</div>
+                            <div class="feature-item">智能路由API选择</div>
+                            <div class="feature-item">讯飞星火语音（无限免费）</div>
+                            <div class="feature-item">智谱AI图像生成</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 记忆标签页 -->
+            <div id="memoryTab" class="tab-content">
+                <h3 style="margin-bottom: 15px;">🧠 TOKI 记忆系统</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">0</div>
+                        <div class="stat-label">总记忆</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">0</div>
+                        <div class="stat-label">用户偏好</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">50%</div>
+                        <div class="stat-label">情绪状态</div>
+                    </div>
+                </div>
+                <div class="notice">
+                    💡 完整记忆功能需在本地APP中使用<br>
+                    下载项目到本地，运行 npm start
+                </div>
+            </div>
+            
+            <!-- 语音标签页 -->
+            <div id="voiceTab" class="tab-content">
+                <h3 style="margin-bottom: 15px;">🎤 语音助手</h3>
+                <div class="notice">
+                    🎤 语音功能需要本地运行<br>
+                    讯飞星火Lite - 无限免费
+                </div>
+                <div style="text-align: center; padding: 40px 0;">
+                    <div style="font-size: 60px; margin-bottom: 20px;">🎤</div>
+                    <p style="color: #666;">下载到本地APP后即可使用语音功能</p>
+                </div>
+            </div>
+            
+            <!-- 图像标签页 -->
+            <div id="imageTab" class="tab-content">
+                <h3 style="margin-bottom: 15px;">🎨 图像生成</h3>
+                <div class="notice">
+                    🎨 图像生成使用智谱AI CogView-3-Flash<br>
+                    完全免费
+                </div>
+                <div style="text-align: center; padding: 40px 0;">
+                    <div style="font-size: 60px; margin-bottom: 20px;">🎨</div>
+                    <p style="color: #666;">在对话中说"画一只猫"即可生成图像</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 输入区域 -->
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="输入消息..." onkeypress="if(event.key==='Enter')sendMessage()">
+            <button class="send-btn" onclick="sendMessage()">发送</button>
+        </div>
+    </div>
+    
+    <script>
+        // API配置
+        const API_KEY = 'c4911cf15f844167bd26301e25622cf1.n1BU10ytXbnQ6N5d';
+        const BASE_URL = 'https://open.bigmodel.cn/api/paas/v4';
+        
+        let conversationHistory = [];
+        
+        // 切换标签页
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            event.target.closest('.nav-item').classList.add('active');
+        }
+        
+        // 添加消息
+        function addMessage(content, type) {
+            const chatMessages = document.getElementById('chatMessages');
+            const div = document.createElement('div');
+            
+            if (type === 'user') {
+                div.innerHTML = `<div class="message user">${content}</div>`;
+            } else {
+                div.className = 'message-wrapper';
+                div.innerHTML = `
+                    <div class="bot-avatar">🤖</div>
+                    <div class="message bot">${content.replace(/\n/g, '<br>')}</div>
+                `;
+            }
+            
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // 发送消息
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            addMessage(message, 'user');
+            input.value = '';
+            
+            try {
+                // 判断是否是图像生成
+                const isImageGen = message.includes('画') || message.includes('生成图');
+                
+                if (isImageGen) {
+                    addMessage('🎨 正在生成图像...', 'bot');
+                } else {
+                    // 文本对话
+                    conversationHistory.push({ role: 'user', content: message });
+                    
+                    const response = await fetch(`${BASE_URL}/chat/completions`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${API_KEY}`
+                        },
+                        body: JSON.stringify({
+                            model: 'glm-4-flash',
+                            messages: conversationHistory
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        const reply = data.choices[0].message.content;
+                        
+                        conversationHistory.push({ role: 'assistant', content: reply });
+                        addMessage(reply, 'bot');
+                    } else {
+                        throw new Error('API调用失败');
+                    }
+                }
+            } catch (error) {
+                console.error('错误:', error);
+                addMessage('抱歉，发生了错误。这是预览版，完整功能请下载到本地运行。', 'bot');
+            }
+        }
+    </script>
+</body>
+</html>

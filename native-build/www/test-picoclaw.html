@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PicoClaw 记忆系统测试</title>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            font-size: 14px;
+            color: #999;
+        }
+        
+        /* 测试区域 */
+        .test-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        /* 输入框 */
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 10px;
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        /* 按钮 */
+        button {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        button.secondary {
+            background: #6c757d;
+        }
+        button.success {
+            background: #28a745;
+        }
+        button.danger {
+            background: #dc3545;
+        }
+        
+        /* 结果显示 */
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .result.error {
+            border-left-color: #dc3545;
+            background: #fff5f5;
+        }
+        .result.success {
+            border-left-color: #28a745;
+            background: #f0fff4;
+        }
+        
+        /* 统计卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        /* 记忆列表 */
+        .memory-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .memory-item {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 3px solid #667eea;
+        }
+        .memory-time {
+            font-size: 11px;
+            color: #999;
+            margin-bottom: 5px;
+        }
+        .memory-content {
+            font-size: 13px;
+            color: #333;
+        }
+        .memory-tags {
+            margin-top: 5px;
+        }
+        .tag {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-right: 5px;
+        }
+        
+        /* 用户画像 */
+        .profile-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        .profile-name {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .profile-interests {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        /* 情绪状态 */
+        .affect-display {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .affect-emoji {
+            font-size: 32px;
+        }
+        .affect-text {
+            flex: 1;
+        }
+        .affect-bar {
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        .affect-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">🧠 PicoClaw 记忆系统</div>
+            <div class="subtitle">轻量级记忆 · 多平台适配 · 完全离线</div>
+        </div>
+        
+        <!-- 统计信息 -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalMemories">0</div>
+                <div class="stat-label">总记忆数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="userInterests">0</div>
+                <div class="stat-label">用户兴趣</div>
+            </div>
+        </div>
+        
+        <!-- 情绪状态 -->
+        <div class="test-section">
+            <div class="section-title">😊 情绪状态</div>
+            <div class="affect-display">
+                <div class="affect-emoji" id="affectEmoji">😐</div>
+                <div class="affect-text">
+                    <div id="affectText">状态一般</div>
+                    <div class="affect-bar">
+                        <div class="affect-fill" id="moodBar" style="width: 50%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 用户画像 -->
+        <div class="profile-section">
+            <div class="profile-name" id="userName">用户</div>
+            <div class="profile-interests" id="userInterestsList">暂无兴趣信息</div>
+        </div>
+        
+        <!-- 测试1: 记住信息 -->
+        <div class="test-section">
+            <div class="section-title">📝 测试1：记住信息</div>
+            <textarea id="testInput" rows="3" placeholder="输入要记住的信息，例如：&#10;- 我叫张三&#10;- 我喜欢打篮球&#10;- 明天有重要会议"></textarea>
+            <button onclick="testMemorize()">💾 记住</button>
+            <div id="memorizeResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <!-- 测试2: 回忆信息 -->
+        <div class="test-section">
+            <div class="section-title">🔍 测试2：回忆信息</div>
+            <input type="text" id="recallQuery" placeholder="输入关键词，例如：名字、篮球、会议">
+            <button onclick="testRecall()">🧠 回忆</button>
+            <div id="recallResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <!-- 测试3: 对话增强 -->
+        <div class="test-section">
+            <div class="section-title">💬 测试3：对话增强</div>
+            <input type="text" id="enhanceInput" placeholder="输入用户消息">
+            <button onclick="testEnhance()">✨ 增强上下文</button>
+            <div id="enhanceResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <!-- 最近记忆 -->
+        <div class="test-section">
+            <div class="section-title">📚 最近记忆</div>
+            <div id="recentMemories" class="memory-list"></div>
+        </div>
+        
+        <!-- 数据管理 -->
+        <div class="test-section">
+            <div class="section-title">⚙️ 数据管理</div>
+            <button class="success" onclick="exportData()">📤 导出数据</button>
+            <button class="secondary" onclick="importData()">📥 导入数据</button>
+            <button class="danger" onclick="clearData()">🗑️ 清除所有</button>
+            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="handleImport(event)">
+        </div>
+    </div>
+    
+    <!-- PicoClaw 核心代码 -->
+    <script src="picoclaw.js"></script>
+    
+    <script>
+        // 初始化PicoClaw
+        const pico = new PicoMemory();
+        
+        // 页面加载
+        window.onload = async function() {
+            await pico.init();
+            refreshStats();
+            refreshRecentMemories();
+        };
+        
+        // 刷新统计
+        async function refreshStats() {
+            const stats = await pico.getStats();
+            
+            document.getElementById('totalMemories').textContent = stats.totalMemories;
+            document.getElementById('userInterests').textContent = stats.userInterests;
+            
+            // 用户画像
+            document.getElementById('userName').textContent = stats.userName || '用户';
+            
+            if (stats.userInterests > 0) {
+                const profile = await pico.getUserProfile();
+                document.getElementById('userInterestsList').textContent = 
+                    '兴趣：' + profile.interests.join('、');
+            }
+            
+            // 情绪状态
+            const affect = stats.affect;
+            document.getElementById('affectEmoji').textContent = getMoodEmoji(affect.mood);
+            document.getElementById('affectText').textContent = affect.moodText;
+            document.getElementById('moodBar').style.width = (affect.mood * 100) + '%';
+        }
+        
+        function getMoodEmoji(mood) {
+            if (mood > 0.8) return '😊';
+            if (mood > 0.6) return '🙂';
+            if (mood > 0.4) return '😐';
+            if (mood > 0.2) return '😔';
+            return '😢';
+        }
+        
+        // 刷新最近记忆
+        async function refreshRecentMemories() {
+            const container = document.getElementById('recentMemories');
+            const memories = pico.memories.slice(-10).reverse();
+            
+            if (memories.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">暂无记忆</div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            memories.forEach(memory => {
+                const div = document.createElement('div');
+                div.className = 'memory-item';
+                
+                const tagsHtml = memory.tags.map(tag => `<span class="tag">${tag}</span>`).join('');
+                
+                div.innerHTML = `
+                    <div class="memory-time">${new Date(memory.timestamp).toLocaleString()}</div>
+                    <div class="memory-content">
+                        <strong>输入：</strong>${memory.input}<br>
+                        <strong>输出：</strong>${memory.output.substring(0, 100)}...
+                    </div>
+                    <div class="memory-tags">${tagsHtml}</div>
+                `;
+                container.appendChild(div);
+            });
+        }
+        
+        // 测试记住
+        async function testMemorize() {
+            const input = document.getElementById('testInput').value.trim();
+            if (!input) {
+                alert('请输入要记住的信息');
+                return;
+            }
+            
+            const result = document.getElementById('memorizeResult');
+            result.style.display = 'block';
+            result.className = 'result';
+            result.textContent = '⏳ 正在记忆...';
+            
+            try {
+                const id = await pico.memorize(input, '已记住这条信息', { test: true });
+                
+                result.className = 'result success';
+                result.textContent = `✅ 记忆成功！\n\n记忆ID: ${id}\n输入: ${input}`;
+                
+                // 刷新显示
+                refreshStats();
+                refreshRecentMemories();
+                
+                // 清空输入
+                document.getElementById('testInput').value = '';
+            } catch (error) {
+                result.className = 'result error';
+                result.textContent = `❌ 记忆失败: ${error.message}`;
+            }
+        }
+        
+        // 测试回忆
+        async function testRecall() {
+            const query = document.getElementById('recallQuery').value.trim();
+            if (!query) {
+                alert('请输入搜索关键词');
+                return;
+            }
+            
+            const result = document.getElementById('recallResult');
+            result.style.display = 'block';
+            result.className = 'result';
+            result.textContent = '⏳ 正在回忆...';
+            
+            try {
+                const memories = await pico.recall(query, 5);
+                
+                if (memories.length === 0) {
+                    result.className = 'result';
+                    result.textContent = '🤔 没有找到相关记忆';
+                    return;
+                }
+                
+                let text = `✅ 找到 ${memories.length} 条相关记忆：\n\n`;
+                memories.forEach((m, i) => {
+                    text += `${i + 1}. ${m.input}\n`;
+                    text += `   时间: ${new Date(m.timestamp).toLocaleString()}\n`;
+                    text += `   重要性: ${Math.round(m.importance * 100)}%\n\n`;
+                });
+                
+                result.className = 'result success';
+                result.textContent = text;
+            } catch (error) {
+                result.className = 'result error';
+                result.textContent = `❌ 回忆失败: ${error.message}`;
+            }
+        }
+        
+        // 测试对话增强
+        async function testEnhance() {
+            const input = document.getElementById('enhanceInput').value.trim();
+            if (!input) {
+                alert('请输入用户消息');
+                return;
+            }
+            
+            const result = document.getElementById('enhanceResult');
+            result.style.display = 'block';
+            result.className = 'result';
+            result.textContent = '⏳ 正在增强...';
+            
+            try {
+                const context = await pico.enhancePrompt(input);
+                
+                result.className = 'result success';
+                result.textContent = `✅ 增强后的上下文：\n\n${context || '（暂无相关上下文）'}`;
+            } catch (error) {
+                result.className = 'result error';
+                result.textContent = `❌ 增强失败: ${error.message}`;
+            }
+        }
+        
+        // 导出数据
+        async function exportData() {
+            const data = await pico.export();
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `picoclaw_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            
+            URL.revokeObjectURL(url);
+            alert('✅ 数据已导出');
+        }
+        
+        // 导入数据
+        function importData() {
+            document.getElementById('importFile').click();
+        }
+        
+        async function handleImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    const success = await pico.import(data);
+                    
+                    if (success) {
+                        alert(`✅ 导入成功！共 ${data.memories.length} 条记忆`);
+                        refreshStats();
+                        refreshRecentMemories();
+                    } else {
+                        alert('❌ 导入失败：数据格式不正确');
+                    }
+                } catch (error) {
+                    alert('❌ 导入失败：' + error.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+        
+        // 清除数据
+        async function clearData() {
+            if (!confirm('⚠️ 确定要清除所有记忆吗？\n\n此操作不可恢复！')) {
+                return;
+            }
+            
+            await pico.clear();
+            refreshStats();
+            refreshRecentMemories();
+            alert('🗑️ 所有记忆已清除');
+        }
+    </script>
+</body>
+</html>
