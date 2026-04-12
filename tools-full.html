@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOKI 全能工具箱 - 64项功能</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container { max-width: 1600px; margin: 0 auto; }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            padding: 20px;
+        }
+        
+        .header h1 {
+            font-size: 42px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .header p {
+            font-size: 18px;
+            opacity: 0.95;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 15px;
+        }
+        
+        .stat {
+            background: rgba(255,255,255,0.2);
+            padding: 10px 25px;
+            border-radius: 20px;
+        }
+        
+        .stat-number {
+            font-size: 28px;
+            font-weight: bold;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        /* 分类标签 */
+        .category-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 25px;
+            padding: 0 10px;
+        }
+        
+        .category-tab {
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.15);
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 25px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .category-tab:hover {
+            background: rgba(255,255,255,0.25);
+            transform: translateY(-2px);
+        }
+        
+        .category-tab.active {
+            background: white;
+            color: #667eea;
+            border-color: white;
+        }
+        
+        /* 分类区域 */
+        .category-section {
+            margin-bottom: 30px;
+        }
+        
+        .category-title {
+            color: white;
+            font-size: 24px;
+            margin-bottom: 15px;
+            padding-left: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .category-count {
+            font-size: 14px;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 12px;
+        }
+        
+        /* 工具网格 */
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 15px;
+        }
+        
+        .tool-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tool-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.15);
+        }
+        
+        .tool-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+        
+        .tool-icon {
+            font-size: 36px;
+            margin-bottom: 10px;
+            display: block;
+        }
+        
+        .tool-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .tool-desc {
+            font-size: 12px;
+            color: #888;
+            line-height: 1.4;
+        }
+        
+        .tool-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        
+        .tool-badge.hot {
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+        }
+        
+        /* 模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .modal.active { display: flex; }
+        
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .modal-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #333;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #999;
+            cursor: pointer;
+        }
+        
+        .close-btn:hover { color: #333; }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .result-box {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9ff;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .result-title {
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .result-content {
+            color: #555;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            font-size: 14px;
+        }
+        
+        .file-upload {
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 25px;
+            text-align: center;
+            background: #f8f9ff;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .file-upload:hover {
+            background: #f0f2ff;
+            border-color: #764ba2;
+        }
+        
+        .file-upload-icon {
+            font-size: 36px;
+            margin-bottom: 8px;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* API配置提示 */
+        .api-notice {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .api-notice-icon {
+            font-size: 24px;
+        }
+        
+        .api-notice-text {
+            flex: 1;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .api-notice-text strong {
+            color: #667eea;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 { font-size: 28px; }
+            .tools-grid { grid-template-columns: repeat(2, 1fr); }
+            .modal-content { padding: 20px; }
+            .stats { flex-wrap: wrap; gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛠️ TOKI 全能工具箱</h1>
+            <p>AI智能助手 · 一站式解决方案</p>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-number">64</div>
+                    <div class="stat-label">功能总数</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">10</div>
+                    <div class="stat-label">功能分类</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">6</div>
+                    <div class="stat-label">智能体</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 分类标签 -->
+        <div class="category-tabs">
+            <div class="category-tab active" onclick="filterCategory('all')">全部功能</div>
+            <div class="category-tab" onclick="filterCategory('chat')">💬 对话</div>
+            <div class="category-tab" onclick="filterCategory('write')">📝 写作</div>
+            <div class="category-tab" onclick="filterCategory('learn')">📚 学习</div>
+            <div class="category-tab" onclick="filterCategory('tool')">🛠️ 工具</div>
+            <div class="category-tab" onclick="filterCategory('fun')">🎭 娱乐</div>
+            <div class="category-tab" onclick="filterCategory('doc')">📄 文档</div>
+            <div class="category-tab" onclick="filterCategory('agent')">🤖 智能体</div>
+            <div class="category-tab" onclick="filterCategory('memory')">🧠 记忆</div>
+        </div>
+        
+        <!-- API提示 -->
+        <div class="api-notice">
+            <div class="api-notice-icon">💡</div>
+            <div class="api-notice-text">
+                <strong>智谱AI GLM-4</strong> 已配置 · 部分功能需要后端API支持 · 
+                <a href="https://open.bigmodel.cn" target="_blank" style="color: #667eea;">API文档</a>
+            </div>
+        </div>
+        
+        <!-- 分类区域 -->
+        <div id="toolsContainer"></div>
+    </div>
+    
+    <div class="modal" id="modal">
+        <div class="modal-content" id="modalContent"></div>
+    </div>
+    
+    <script>
+        // API配置
+        const API_KEY = 'c4911cf15f844167bd26301e25622cf1.n1BU10ytXbnQ6N5d';
+        const API_BASE = 'https://open.bigmodel.cn/api/paas/v4';
+        const LOCAL_API = 'http://localhost:8000'; // 本地API（部分功能需要）
+        
+        // 完整功能列表
+        const allTools = [
+            // 💬 对话
+            { id: 'chat', icon: '💬', title: '智能对话', desc: 'AI智能问答对话', category: 'chat', hot: true },
+            { id: 'video-call', icon: '📹', title: '视频通话', desc: 'P2P视频聊天', category: 'chat' },
+            { id: 'voice-chat', icon: '🎤', title: '语音对话', desc: '语音实时对话', category: 'chat' },
+            
+            // 📝 写作
+            { id: 'moments', icon: '💬', title: '朋友圈文案', desc: '快速生成朋友圈文案', category: 'write' },
+            { id: 'xiaohongshu', icon: '📕', title: '小红书文案', desc: '爆款笔记一键生成', category: 'write', hot: true },
+            { id: 'email', icon: '📧', title: '邮件写作', desc: '商务邮件快速生成', category: 'write' },
+            { id: 'article', icon: '📄', title: '文章创作', desc: '大纲+内容生成', category: 'write' },
+            { id: 'translate', icon: '🌐', title: '翻译', desc: '多语言翻译', category: 'write' },
+            { id: 'summary', icon: '📊', title: '内容总结', desc: '长文快速总结', category: 'write' },
+            
+            // 📚 学习
+            { id: 'homework', icon: '✏️', title: '作业辅导', desc: '题目解答+讲解', category: 'learn', hot: true },
+            { id: 'explain', icon: '💡', title: '知识讲解', desc: '通俗易懂解释概念', category: 'learn' },
+            { id: 'english', icon: '🔤', title: '英语学习', desc: '语法、翻译、作文', category: 'learn' },
+            { id: 'study-plan', icon: '📅', title: '学习计划', desc: '制定学习计划', category: 'learn' },
+            
+            // 🛠️ 工具
+            { id: 'image-gen', icon: '🎨', title: '图像生成', desc: '文字生成图片', category: 'tool', hot: true },
+            { id: 'image-vision', icon: '📸', title: '图像识别', desc: '上传图片识别', category: 'tool' },
+            { id: 'calculator', icon: '🧮', title: '计算器', desc: '数学表达式计算', category: 'tool' },
+            { id: 'weather', icon: '🌤️', title: '天气查询', desc: '查询城市天气', category: 'tool' },
+            { id: 'search', icon: '🔍', title: '网络搜索', desc: '搜索网络信息', category: 'tool' },
+            { id: 'chart', icon: '📊', title: '图表生成', desc: '生成数据图表', category: 'tool' },
+            { id: 'datetime', icon: '📅', title: '日期时间', desc: '日期时间查询', category: 'tool' },
+            
+            // 🎭 娱乐
+            { id: 'roleplay', icon: '🎭', title: '角色扮演', desc: '与AI角色对话', category: 'fun' },
+            { id: 'story', icon: '📖', title: '故事创作', desc: '生成精彩故事', category: 'fun' },
+            { id: 'joke', icon: '😂', title: '讲笑话', desc: '轻松幽默', category: 'fun' },
+            { id: 'chat-companion', icon: '💬', title: '聊天陪伴', desc: '情感支持', category: 'fun' },
+            
+            // 📄 文档处理
+            { id: 'parse-document', icon: '📄', title: '长文档解析', desc: 'AI理解内容并回答', category: 'doc', badge: 'NEW' },
+            { id: 'generate-ppt', icon: '📊', title: 'PPT生成', desc: '自动生成PPT演示文稿', category: 'doc', badge: 'NEW' },
+            { id: 'analyze-excel', icon: '📈', title: '数据分析', desc: '自动分析并生成图表', category: 'doc', badge: 'NEW' },
+            { id: 'text-to-speech', icon: '🎙️', title: '语音合成', desc: '文字转语音，多音色', category: 'doc', badge: 'NEW' },
+            { id: 'image-to-pdf', icon: '🖼️', title: '图片转PDF', desc: '将图片转换为PDF', category: 'doc' },
+            { id: 'images-to-pdf', icon: '🖼️', title: '多图转PDF', desc: '多张图片合成PDF', category: 'doc' },
+            { id: 'merge-pdf', icon: '📑', title: 'PDF合并', desc: '多个PDF合并为一个', category: 'doc' },
+            { id: 'split-pdf', icon: '📋', title: 'PDF拆分', desc: 'PDF拆分为多个', category: 'doc' },
+            { id: 'ocr', icon: '📝', title: 'OCR识别', desc: '图片转文字，支持中英文', category: 'doc' },
+            { id: 'scan-card', icon: '💳', title: '名片扫描', desc: '扫描名片提取信息', category: 'doc' },
+            { id: 'scan-doc', icon: '📄', title: '文档扫描', desc: '扫描文档提取内容', category: 'doc' },
+            
+            // 🤖 智能体
+            { id: 'agent-data', icon: '📊', title: '数据分析师', desc: '数据分析、统计、可视化', category: 'agent' },
+            { id: 'agent-business', icon: '💼', title: '商务助手', desc: '商业文档、报告、方案', category: 'agent' },
+            { id: 'agent-learn', icon: '📚', title: '学习导师', desc: '作业辅导、知识讲解', category: 'agent' },
+            { id: 'agent-design', icon: '🎨', title: '设计师助手', desc: '设计方案、配色建议', category: 'agent' },
+            { id: 'agent-write', icon: '✍️', title: '写作伙伴', desc: '文章创作、文案优化', category: 'agent' },
+            { id: 'agent-code', icon: '💻', title: '编程助手', desc: '代码编写、调试', category: 'agent', hot: true },
+            
+            // 🧠 记忆系统
+            { id: 'memorize', icon: '📝', title: '记住信息', desc: '保存重要信息', category: 'memory' },
+            { id: 'recall', icon: '🔍', title: '回忆信息', desc: '搜索记忆内容', category: 'memory' },
+            { id: 'profile', icon: '👤', title: '用户画像', desc: '查看个人信息', category: 'memory' },
+            { id: 'export-memory', icon: '📤', title: '导出记忆', desc: '导出所有记忆数据', category: 'memory' },
+            { id: 'import-memory', icon: '📥', title: '导入记忆', desc: '导入记忆数据', category: 'memory' },
+            
+            // 智能体执行
+            { id: 'agent-execute', icon: '🤖', title: '智能体执行', desc: '自动分解任务并执行', category: 'doc', badge: 'NEW' },
+        ];
+        
+        // 渲染工具
+        function renderTools(filter = 'all') {
+            const container = document.getElementById('toolsContainer');
+            
+            // 按分类分组
+            const categories = {
+                'chat': { name: '💬 对话', tools: [] },
+                'write': { name: '📝 写作', tools: [] },
+                'learn': { name: '📚 学习', tools: [] },
+                'tool': { name: '🛠️ 工具', tools: [] },
+                'fun': { name: '🎭 娱乐', tools: [] },
+                'doc': { name: '📄 文档处理', tools: [] },
+                'agent': { name: '🤖 智能体', tools: [] },
+                'memory': { name: '🧠 记忆系统', tools: [] }
+            };
+            
+            // 分组
+            allTools.forEach(tool => {
+                if (filter === 'all' || tool.category === filter) {
+                    if (categories[tool.category]) {
+                        categories[tool.category].tools.push(tool);
+                    }
+                }
+            });
+            
+            // 渲染
+            let html = '';
+            Object.entries(categories).forEach(([key, cat]) => {
+                if (cat.tools.length > 0) {
+                    html += `
+                        <div class="category-section" data-category="${key}">
+                            <div class="category-title">
+                                ${cat.name}
+                                <span class="category-count">${cat.tools.length}项</span>
+                            </div>
+                            <div class="tools-grid">
+                                ${cat.tools.map(tool => `
+                                    <div class="tool-card" onclick="openTool('${tool.id}')">
+                                        ${tool.badge ? `<span class="tool-badge">${tool.badge}</span>` : ''}
+                                        ${tool.hot ? `<span class="tool-badge hot">HOT</span>` : ''}
+                                        <span class="tool-icon">${tool.icon}</span>
+                                        <div class="tool-title">${tool.title}</div>
+                                        <div class="tool-desc">${tool.desc}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // 分类筛选
+        function filterCategory(category) {
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+            renderTools(category);
+        }
+        
+        // 打开工具
+        function openTool(toolId) {
+            const tool = allTools.find(t => t.id === toolId);
+            const modal = document.getElementById('modal');
+            const content = document.getElementById('modalContent');
+            
+            let html = `
+                <div class="modal-header">
+                    <div class="modal-title">${tool.icon} ${tool.title}</div>
+                    <button class="close-btn" onclick="closeModal()">&times;</button>
+                </div>
+            `;
+            
+            // 根据不同工具显示不同内容
+            html += getToolForm(toolId);
+            
+            content.innerHTML = html;
+            modal.classList.add('active');
+        }
+        
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+        
+        // 获取工具表单
+        function getToolForm(toolId) {
+            const forms = {
+                'chat': `
+                    <form onsubmit="callAI(event, '你是一个AI助手，请帮助用户解决问题。', 'userInput', 'result')">
+                        <div class="form-group">
+                            <label class="form-label">输入你的问题</label>
+                            <textarea class="form-textarea" id="userInput" rows="4" placeholder="输入你的问题..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn" id="submitBtn">发送</button>
+                    </form>
+                    <div id="result"></div>
+                `,
+                
+                'moments': `
+                    <form onsubmit="callAI(event, '帮我写一条朋友圈文案，内容是：', 'userInput', 'result')">
+                        <div class="form-group">
+                            <label class="form-label">你想分享什么？</label>
+                            <textarea class="form-textarea" id="userInput" rows="3" placeholder="例如：今天去吃了火锅，很开心" required></textarea>
+                        </div>
+                        <button type="submit" class="btn">生成文案</button>
+                    </form>
+                    <div id="result"></div>
+                `,
+                
+                'xiaohongshu': `
+                    <form onsubmit="callAI(event, '帮我写一篇小红书笔记，主题是：', 'userInput', 'result')">
+                        <div class="form-group">
+                            <label class="form-label">笔记主题</label>
+                            <textarea class="form-textarea" id="userInput" rows="3" placeholder="例如：成都美食推荐" required></textarea>
+                        </div>
+                        <button type="submit" class="btn">生成笔记</button>
+                    </form>
+                    <div id="result"></div>
+                `,
+                
+                'email': `
+                    <form onsubmit="callAI(event, '帮我写一封邮件，内容是：', 'userInput', 'result')">
+                        <div class="form-group">
+                            <label class="form-label">邮件内容</label>
+                            <textarea class="form-textarea" id="userInput" rows="3" placeholder="例如：向领导请假" required></textarea>
+                        </div>
+                        <button type="submit" class="btn">生成邮件</button>
+                    </form>
+                    <div id="result"></div>
+                `,
+                
+                'article': `
+                    <form onsubmit="callAI(event, '帮我写一篇文章，主题是：', 'userInput', 'result')">
+                        <div class="form-group">
+                            <label class="form-label">文章主题</label>
+                            <textarea class="form-textarea" id="userInput" rows="3" placeholder="例如：人工智能的未来" required></textarea>
+                        </div>
+                        <button type="submit" class="btn">生成文章</button>
+                    </form>
+                    <div id="result"></div>
+                `,
+                
+                'translate': `
+                    <form onsubmit="callAI(event, '请翻译以下内容：', 'userInput', 'result')">
+                        <div class="form-group">
+                            <label class="form-label">输入要翻译的内容</label>
+                            <textarea class="form-textarea" id="userInput" rows="4" placeholder="输入要翻译的内容..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn">翻译</button>
+                    </form>
+                    <div id="result"></div>
+                `,
+                
+                'summary': `
+                    <form onsubmit="callAI(event, '请总结以下内容：', 'userInput', 'result')">
+                        <div class="form-group">
+                            <label class="form-label">粘贴需要总结的内容</label>
+                            <textarea class="form-textarea" id="userInput" rows="6" placeholder="粘贴需要总结的内容..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn">总结</button>
+                    </form>
+                    <div id="result"></div>
+                `,
+                
+                'homework': `
+                    <form onsubmit="callAI(event, '你是一个耐心的学习导师，请解答以下问题：', 'userInput', 'result')">
+                        <div class="form-group">
+                            <label class="form-label">输入题目</label>
+                            <textarea class="form-textarea" id="userInput" rows="4" placeholder="输入你的问题..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn">解答</button>
+                    </form>
+                    <div id="result"></div>
+                `,
+                
+                'explain': `
+                    <form onsubmit="callAI(event, '请用通俗易懂的语言解释以下概念：', 'userInput', 'result')">
+                        <div class="form-group">
+                            <label class="form-label">输入概念或问题</label>
+                            <textarea class="form-textarea" id="userInput" rows="3" placeholder="例如：什么是量子力学" required></textarea>
+                        </div>
+                        <button type="submit" class="btn">讲解</button>
+                    </form>
+                    <div id="result"></div>
+                `,
+                
+                'english': `
+                    <form onsubmit="callAI(event, '你是一个英语学习助手，请帮助用户：', 'userInput', 'result')">
+                        <div class="form-group">
+                            <label class="form-label">输入英语问题</label>
+                            <textarea class="form-textarea" id="userInput" rows="3" placeholder="语法、翻译、作文..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn">解答</button>
+                    </form>
+                    <div id="result"></div>
+                `,
+                
+                'study-plan': `
+                    <form onsubmit="callAI(event, '请帮我制定学习计划：', 'userInput', 'result')">
+                        <div class="form-group">
+                            <label class="form-label">学习目标和时间</label>
+                            <textarea class="form-textarea" id="userInput" rows="3" placeholder="例如：我想在3个月内学会Python" required></textarea>
+                        </div>
+                        <button type="submit" class="btn">制定计划</button>
+                    </form>
+                    <div id="result"></div>
+                `,
+                
+                'image-gen': `
+                    <form onsubmit="generateImage(event)">
+                        <div class="form-group">
+                            <label class="form-label">图片描述</label>
+                            <textarea class="form-textarea" id="imagePrompt" rows="3" placeholder="描述你想要生成的图片..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn">生成图片</button>
+                    </form>
+                    <div id="result"></div>
+                `,
+                
+                'weather': `
+                    <form onsubmit="getWeather(event)">
+                        <div class="form-group">
+                            <label class="form-label">城市名称</label>
+                            <input type="text" class="form-input" id="cityName" placeholder="例如：北京" required>
+                        </div>
+                        <button type="submit" class="btn">查询天气</button>
+                    </form>
+                    <div id="result"></div>
+                `,
+                
+                'calculator': `
+                    <form onsubmit="calculate(event)">
+                        <div class="form-group">
+                            <label class="form-label">数学表达式</label>
+                            <input type="text" class="form-input" id="expression" placeholder="例如：2+3*4 或 Math.sqrt(16)" required>
+                        </div>
+                        <button type="submit" class="btn">计算</button>
+                    </form>
+                    <div id="result"></div>
+                `,
+                
+                'datetime': `
+                    <div class="result-box">
+                        <div class="result-title">当前时间</div>
+                        <div class="result-content" id="datetimeResult">加载中...</div>
+                    </div>
+                `,
+                
+                'roleplay': `
+                    <form onsubmit="callAI(event, '你是一个角色扮演AI，请扮演用户指定的角色进行对话：', 'userInput', 'result')">
+                        <div class="form-group">
+                            <label class="form-label">选择角色或描述</label>
+                            <select class="form-select" id="roleSelect" onchange="updateRoleInput()">
+                                <option value="我是你的私人管家，请问有什么可以帮您的？">🤵 管家</option>
+                                <option value="我是一个幽默风趣的脱口秀演员，来聊聊吧！">🎤 脱口秀演员</option>
+                                <option value="我是一个温柔的心理咨询师，有什么想说的吗？">🧠 心理咨询师</option>
+                                <option value="我是一个经验丰富的创业导师，来聊聊创业吧！">💼 创业导师</option>
+                                <option value="custom">自定义角色</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">开始对话</label>
+                            <textarea class="form-textarea" id="userInput" rows="3" placeholder="输入你想说的话..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn">开始对话</button>
+                    </form>
+                    <div id="result"></div>
+                `,
+                
+                'story': `
+                    <form onsubmit="callAI(event, '请帮我创作一个故事，主题是：', 'userInput', 'result')">
+                        <div class="form-group">
+                            <label class="form-label">故事主题</label>
+                            <textarea class="form-textarea" id="userInput" rows="3" placeholder="例如：一个机器人的冒险之旅" required></textarea>
+                        </div>
+                        <button type="submit" class="btn">创作故事</button>
+                    </form>
+                    <div id="result"></div>
+                `,
+                
+                'joke': `
+                    <form onsubmit="callAI(event, '请给我讲一个笑话，类型是：', 'userInput', 'result')">
+                        <div class="form-group">
+                            <label class="form-label">笑话类型（可选）</label>
+                            <input type="text" class="form-input" id="userInput" placeholder="例如：冷笑话、程序员笑话">
+                        </div>
+                        <button type="submit" class="btn">讲个笑话</button>
+                    </form>
+                    <div id="result"></div>
+                `,
+                
+                'text-to-speech': `
+                    <form onsubmit="textToSpeech(event)">
+                        <div class="form-group">
+                            <label class="form-label">输入文字</label>
+                            <textarea class="form-textarea" id="ttsText" rows="4" placeholder="请输入要转换的文字..." required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">选择音色</label>
+                            <select class="form-select" id="voiceSelect">
+                                <option value="zh-CN-YunxiaNeural">👨‍👦 男童声（可爱）</option>
+                                <option value="zh-CN-YunxiNeural">👨 男青年声</option>
+                                <option value="zh-CN-XiaoxiaoNeural">👩 女青年声</option>
+                                <option value="zh-CN-XiaoyiNeural">👧 女童声</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn">生成语音</button>
+                    </form>
+                    <div id="result"></div>
+                `,
+                
+                'ocr': `
+                    <form onsubmit="doOCR(event)">
+                        <div class="form-group">
+                            <label class="form-label">上传图片</label>
+                            <div class="file-upload" onclick="document.getElementById('ocrFile').click()">
+                                <div class="file-upload-icon">🖼️</div>
+                                <div>点击上传图片</div>
+                                <input type="file" id="ocrFile" style="display:none" accept="image/*" onchange="updateFileName(this, 'ocrFileName')">
+                            </div>
+                            <div id="ocrFileName" style="margin-top: 8px; color: #667eea; font-weight: 600;"></div>
+                        </div>
+                        <button type="submit" class="btn">识别文字</button>
+                    </form>
+                    <div id="result"></div>
+                `,
+                
+                'memorize': `
+                    <form onsubmit="memorize(event)">
+                        <div class="form-group">
+                            <label class="form-label">输入要记住的信息</label>
+                            <textarea class="form-textarea" id="memoryInput" rows="4" placeholder="例如：我的生日是3月15日..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn">记住</button>
+                    </form>
+                    <div id="result"></div>
+                `,
+                
+                'recall': `
+                    <form onsubmit="recall(event)">
+                        <div class="form-group">
+                            <label class="form-label">搜索关键词</label>
+                            <input type="text" class="form-input" id="recallQuery" placeholder="输入关键词搜索记忆..." required>
+                        </div>
+                        <button type="submit" class="btn">回忆</button>
+                    </form>
+                    <div id="result"></div>
+                `,
+                
+                'profile': `
+                    <div class="result-box">
+                        <div class="result-title">用户画像</div>
+                        <div class="result-content" id="profileResult">加载中...</div>
+                    </div>
+                `,
+                
+                'agent-data': `
+                    <form onsubmit="callAgent(event, 'dataAnalyst')">
+                        <div class="form-group">
+                            <label class="form-label">数据分析任务</label>
+                            <textarea class="form-textarea" id="agentTask" rows="4" placeholder="描述你的数据分析需求..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn">分析</button>
+                    </form>
+                    <div id="result"></div>
+                `,
+                
+                'agent-business': `
+                    <form onsubmit="callAgent(event, 'businessAssistant')">
+                        <div class="form-group">
+                            <label class="form-label">商务任务</label>
+                            <textarea class="form-textarea" id="agentTask" rows="4" placeholder="描述你的商务需求..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn">处理</button>
+                    </form>
+                    <div id="result"></div>
+                `,
+                
+                'agent-code': `
+                    <form onsubmit="callAgent(event, 'codeHelper')">
+                        <div class="form-group">
+                            <label class="form-label">编程问题</label>
+                            <textarea class="form-textarea" id="agentTask" rows="4" placeholder="描述你的编程问题..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn">解答</button>
+                    </form>
+                    <div id="result"></div>
+                `,
+                
+                'parse-document': `
+                    <form onsubmit="parseDocument(event)">
+                        <div class="form-group">
+                            <label class="form-label">上传文档</label>
+                            <div class="file-upload" onclick="document.getElementById('docFile').click()">
+                                <div class="file-upload-icon">📁</div>
+                                <div>点击上传文件</div>
+                                <div style="font-size: 12px; color: #999; margin-top: 5px;">支持 PDF, Word, Excel, TXT</div>
+                                <input type="file" id="docFile" style="display:none" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt" onchange="updateFileName(this, 'docFileName')">
+                            </div>
+                            <div id="docFileName" style="margin-top: 8px; color: #667eea; font-weight: 600;"></div>
+                        </div>
+                        <button type="submit" class="btn">解析文档</button>
+                    </form>
+                    <div id="result"></div>
+                `,
+                
+                'generate-ppt': `
+                    <form onsubmit="generatePPT(event)">
+                        <div class="form-group">
+                            <label class="form-label">PPT标题</label>
+                            <input type="text" class="form-input" id="pptTitle" placeholder="例如：产品介绍" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">幻灯片内容（每页一行，格式：标题|内容）</label>
+                            <textarea class="form-textarea" id="pptSlides" rows="5" placeholder="产品概述|我们的产品是...&#10;市场分析|市场规模达到..."></textarea>
+                        </div>
+                        <button type="submit" class="btn">生成PPT</button>
+                    </form>
+                    <div id="result"></div>
+                `
+            };
+            
+            // 默认表单
+            return forms[toolId] || `
+                <div class="result-box">
+                    <div class="result-content">功能开发中，敬请期待！</div>
+                </div>
+            `;
+        }
+        
+        // 调用AI
+        async function callAI(event, prompt, inputId, resultId) {
+            event.preventDefault();
+            const btn = event.target.querySelector('.btn');
+            const result = document.getElementById(resultId);
+            const input = document.getElementById(inputId);
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span>处理中...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: 'glm-4-flash',
+                        messages: [{ role: 'user', content: prompt + input.value }]
+                    })
+                });
+                
+                const data = await response.json();
+                const content = data.choices[0].message.content;
+                
+                result.innerHTML = `
+                    <div class="result-box">
+                        <div class="result-title">✅ 结果</div>
+                        <div class="result-content">${content}</div>
+                    </div>
+                `;
+            } catch (error) {
+                result.innerHTML = `<div class="result-box"><div class="result-content" style="color: red;">请求失败: ${error.message}</div></div>`;
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = '发送';
+        }
+        
+        // 生成图片
+        async function generateImage(event) {
+            event.preventDefault();
+            const btn = event.target.querySelector('.btn');
+            const result = document.getElementById('result');
+            const prompt = document.getElementById('imagePrompt').value;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span>生成中...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/images/generations`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: 'cogview-3-flash',
+                        prompt: prompt
+                    })
+                });
+                
+                const data = await response.json();
+                const imageUrl = data.data[0].url;
+                
+                result.innerHTML = `
+                    <div class="result-box">
+                        <div class="result-title">✅ 图片生成成功</div>
+                        <img src="${imageUrl}" style="width: 100%; margin-top: 10px; border-radius: 8px;">
+                    </div>
+                `;
+            } catch (error) {
+                result.innerHTML = `<div class="result-box"><div class="result-content" style="color: red;">生成失败: ${error.message}</div></div>`;
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = '生成图片';
+        }
+        
+        // 查询天气
+        async function getWeather(event) {
+            event.preventDefault();
+            const btn = event.target.querySelector('.btn');
+            const result = document.getElementById('result');
+            const city = document.getElementById('cityName').value;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span>查询中...';
+            
+            try {
+                const response = await fetch(`https://wttr.in/${city}?format=j1`);
+                const data = await response.json();
+                const current = data.current_condition[0];
+                
+                result.innerHTML = `
+                    <div class="result-box">
+                        <div class="result-title">🌤️ ${city} 天气</div>
+                        <div class="result-content">
+温度: ${current.temp_C}°C
+天气: ${current.weatherDesc[0].value}
+湿度: ${current.humidity}%
+风速: ${current.windspeedKmph} km/h
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                result.innerHTML = `<div class="result-box"><div class="result-content" style="color: red;">查询失败: ${error.message}</div></div>`;
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = '查询天气';
+        }
+        
+        // 计算器
+        function calculate(event) {
+            event.preventDefault();
+            const result = document.getElementById('result');
+            const expr = document.getElementById('expression').value;
+            
+            try {
+                const ans = Function('"use strict"; return (' + expr + ')')();
+                result.innerHTML = `
+                    <div class="result-box">
+                        <div class="result-title">计算结果</div>
+                        <div class="result-content">${expr} = ${ans}</div>
+                    </div>
+                `;
+            } catch (error) {
+                result.innerHTML = `<div class="result-box"><div class="result-content" style="color: red;">计算错误: ${error.message}</div></div>`;
+            }
+        }
+        
+        // 更新文件名
+        function updateFileName(input, displayId) {
+            document.getElementById(displayId).textContent = '已选择: ' + input.files[0].name;
+        }
+        
+        // 记忆功能
+        const memoryKey = 'toki_memory';
+        
+        async function memorize(event) {
+            event.preventDefault();
+            const result = document.getElementById('result');
+            const input = document.getElementById('memoryInput').value;
+            
+            const memories = JSON.parse(localStorage.getItem(memoryKey) || '[]');
+            memories.push({
+                id: Date.now(),
+                content: input,
+                time: new Date().toISOString()
+            });
+            localStorage.setItem(memoryKey, JSON.stringify(memories));
+            
+            result.innerHTML = `
+                <div class="result-box">
+                    <div class="result-title">✅ 已记住</div>
+                    <div class="result-content">${input}</div>
+                </div>
+            `;
+        }
+        
+        async function recall(event) {
+            event.preventDefault();
+            const result = document.getElementById('result');
+            const query = document.getElementById('recallQuery').value.toLowerCase();
+            
+            const memories = JSON.parse(localStorage.getItem(memoryKey) || '[]');
+            const found = memories.filter(m => m.content.toLowerCase().includes(query));
+            
+            if (found.length > 0) {
+                result.innerHTML = `
+                    <div class="result-box">
+                        <div class="result-title">找到 ${found.length} 条记忆</div>
+                        <div class="result-content">${found.map(m => `• ${m.content}`).join('\n')}</div>
+                    </div>
+                `;
+            } else {
+                result.innerHTML = `<div class="result-box"><div class="result-content">没有找到相关记忆</div></div>`;
+            }
+        }
+        
+        // 智能体调用
+        const agents = {
+            dataAnalyst: '你是一个专业的数据分析师，擅长数据分析、统计和可视化。',
+            businessAssistant: '你是一个专业的商务助手，精通商业文档撰写、市场分析。',
+            codeHelper: '你是一个专业的编程助手，精通多种编程语言和技术栈。'
+        };
+        
+        async function callAgent(event, agentId) {
+            event.preventDefault();
+            const btn = event.target.querySelector('.btn');
+            const result = document.getElementById('result');
+            const task = document.getElementById('agentTask').value;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span>处理中...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: 'glm-4-flash',
+                        messages: [
+                            { role: 'system', content: agents[agentId] },
+                            { role: 'user', content: task }
+                        ]
+                    })
+                });
+                
+                const data = await response.json();
+                const content = data.choices[0].message.content;
+                
+                result.innerHTML = `
+                    <div class="result-box">
+                        <div class="result-title">✅ 完成</div>
+                        <div class="result-content">${content}</div>
+                    </div>
+                `;
+            } catch (error) {
+                result.innerHTML = `<div class="result-box"><div class="result-content" style="color: red;">请求失败: ${error.message}</div></div>`;
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = '发送';
+        }
+        
+        // 日期时间
+        function updateDateTime() {
+            const now = new Date();
+            const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+            const el = document.getElementById('datetimeResult');
+            if (el) {
+                el.innerHTML = `
+📅 日期: ${now.toLocaleDateString('zh-CN')}
+⏰ 时间: ${now.toLocaleTimeString('zh-CN')}
+📆 星期: ${weekdays[now.getDay()]}
+🔢 时间戳: ${now.getTime()}
+                `;
+            }
+        }
+        
+        // 语音合成
+        async function textToSpeech(event) {
+            event.preventDefault();
+            const btn = event.target.querySelector('.btn');
+            const result = document.getElementById('result');
+            const text = document.getElementById('ttsText').value;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span>生成中...';
+            
+            try {
+                // 使用浏览器内置语音合成
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'zh-CN';
+                utterance.rate = 1.0;
+                
+                window.speechSynthesis.speak(utterance);
+                
+                result.innerHTML = `
+                    <div class="result-box">
+                        <div class="result-title">✅ 正在播放</div>
+                        <div class="result-content">${text}</div>
+                    </div>
+                `;
+            } catch (error) {
+                result.innerHTML = `<div class="result-box"><div class="result-content" style="color: red;">播放失败: ${error.message}</div></div>`;
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = '播放语音';
+        }
+        
+        // 初始化
+        renderTools();
+        
+        // 更新时间
+        setInterval(updateDateTime, 1000);
+        updateDateTime();
+        
+        // 点击模态框外部关闭
+        document.getElementById('modal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+    </script>
+</body>
+</html>
