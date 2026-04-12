@@ -435,15 +435,43 @@
             <!-- 记忆标签页 -->
             <div id="memoryTab" class="tab-content">
                 <div style="padding: 20px;">
-                    <h3 style="margin-bottom: 15px;">🧠 我的记忆</h3>
-                    <div id="memoryStats" style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
-                        <span id="memoryCount">📝 0 条记忆</span>
+                    <h3 style="margin-bottom: 15px;">🧠 增强记忆系统</h3>
+                    
+                    <!-- 统计信息 -->
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;">
+                        <div style="background: #667eea; color: white; padding: 15px; border-radius: 12px; text-align: center;">
+                            <div style="font-size: 24px; font-weight: bold;" id="totalMemories">0</div>
+                            <div style="font-size: 12px;">总记忆</div>
+                        </div>
+                        <div style="background: #ff6b6b; color: white; padding: 15px; border-radius: 12px; text-align: center;">
+                            <div style="font-size: 24px; font-weight: bold;" id="totalNociception">0</div>
+                            <div style="font-size: 12px;">痛点记录</div>
+                        </div>
+                        <div style="background: #51cf66; color: white; padding: 15px; border-radius: 12px; text-align: center;">
+                            <div style="font-size: 24px; font-weight: bold;" id="userPreferences">0</div>
+                            <div style="font-size: 12px;">用户偏好</div>
+                        </div>
                     </div>
-                    <div id="memoryList" style="max-height: 400px; overflow-y: auto;"></div>
+                    
+                    <!-- 情绪状态 -->
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 12px; margin-bottom: 15px;">
+                        <div style="font-size: 14px; margin-bottom: 5px;">💭 当前状态</div>
+                        <div id="affectState" style="font-size: 16px;">正在初始化...</div>
+                    </div>
+                    
+                    <!-- 记忆搜索 -->
+                    <div style="margin-bottom: 15px;">
+                        <input type="text" id="memorySearchInput" placeholder="🔍 搜索记忆..." style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 14px;">
+                    </div>
+                    
+                    <!-- 记忆列表 -->
+                    <div id="memoryList" style="max-height: 300px; overflow-y: auto; background: #f8f9fa; border-radius: 8px; padding: 10px;"></div>
+                    
+                    <!-- 操作按钮 -->
                     <div style="margin-top: 15px; display: flex; gap: 10px;">
-                        <button onclick="refreshMemories()" style="flex: 1; padding: 10px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer;">🔄 刷新</button>
-                        <button onclick="exportMemories()" style="flex: 1; padding: 10px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer;">📤 导出</button>
-                        <button onclick="clearAllMemories()" style="flex: 1; padding: 10px; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer;">🗑️ 清除</button>
+                        <button onclick="refreshMemories()" style="flex: 1; padding: 12px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">🔄 刷新</button>
+                        <button onclick="exportMemories()" style="flex: 1; padding: 12px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">📤 导出</button>
+                        <button onclick="clearAllMemories()" style="flex: 1; padding: 12px; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">🗑️ 清除</button>
                     </div>
                 </div>
             </div>
@@ -470,7 +498,7 @@
         </div>
     </div>
     
-    <script src="memory-system.js"></script>
+    <script src="enhanced-memory-system.js"></script>
     <script>
         // API配置
         const API_KEY = 'c4911cf15f844167bd26301e25622cf1.n1BU10ytXbnQ6N5d';
@@ -972,7 +1000,7 @@
                         addMessage('🎨 图片生成成功！', 'bot');
                         
                         // 保存到记忆
-                        tokiMemory.memorize(message, '图片已生成', { type: 'image' });
+                        enhancedMemory.memorize(message, '图片已生成', { type: 'image' });
                     } else {
                         throw new Error('图像生成失败');
                     }
@@ -989,7 +1017,7 @@
                     }
                     
                     // ⭐ 新增：查询相关记忆作为上下文
-                    const memoryContext = tokiMemory.buildContext(message);
+                    const memoryContext = enhancedMemory.buildContext(message);
                     if (memoryContext) {
                         messages.push({
                             role: 'system',
@@ -1024,7 +1052,7 @@
                         conversationHistory.push({ role: 'assistant', content: reply });
                         
                         // ⭐ 新增：保存到记忆系统
-                        tokiMemory.memorize(message, reply, { agent: currentAgent });
+                        enhancedMemory.memorize(message, reply, { agent: currentAgent });
                         
                         // 保持历史记录不超过20条
                         if (conversationHistory.length > 20) {
@@ -1073,43 +1101,93 @@
         
         // 记忆管理函数
         function refreshMemories() {
-            const count = tokiMemory.memories.length;
-            document.getElementById('memoryCount').textContent = `📝 ${count} 条记忆`;
+            const stats = enhancedMemory.getStats();
             
+            // 更新统计数据
+            document.getElementById('totalMemories').textContent = stats.totalMemories;
+            document.getElementById('totalNociception').textContent = stats.totalNociception;
+            document.getElementById('userPreferences').textContent = stats.userPreferences;
+            
+            // 更新情绪状态
+            document.getElementById('affectState').textContent = enhancedMemory.getAffectSummary();
+            
+            // 显示最近记忆
             const memoryList = document.getElementById('memoryList');
             memoryList.innerHTML = '';
             
-            const recentMemories = tokiMemory.memories.slice(-10).reverse();
+            const recentMemories = enhancedMemory.memories.slice(-10).reverse();
             recentMemories.forEach(memory => {
                 const div = document.createElement('div');
-                div.style.cssText = 'background: white; padding: 10px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid #667eea;';
+                div.style.cssText = 'background: white; padding: 12px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid #667eea;';
+                
+                // 标签显示
+                const tagsHtml = memory.tags.map(tag => `<span style="background: #e3f2fd; color: #1976d2; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-right: 5px;">${tag}</span>`).join('');
+                
+                // 重要性显示
+                const importanceColor = memory.importance > 0.8 ? '#28a745' : (memory.importance > 0.5 ? '#ffc107' : '#6c757d');
+                
                 div.innerHTML = `
-                    <div style="font-size: 12px; color: #999; margin-bottom: 5px;">${new Date(memory.timestamp).toLocaleString()}</div>
-                    <div style="font-weight: bold; margin-bottom: 5px;">${memory.input.substring(0, 50)}...</div>
-                    <div style="color: #666; font-size: 13px;">${memory.output.substring(0, 100)}...</div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font-size: 12px; color: #999;">${new Date(memory.timestamp).toLocaleString()}</span>
+                        <span style="font-size: 11px; color: ${importanceColor};">重要度: ${Math.round(memory.importance * 100)}%</span>
+                    </div>
+                    <div style="font-weight: bold; margin-bottom: 5px; font-size: 14px;">${memory.input.substring(0, 60)}...</div>
+                    <div style="color: #666; font-size: 13px; margin-bottom: 8px;">${memory.output.substring(0, 100)}...</div>
+                    <div style="margin-top: 5px;">${tagsHtml}</div>
                 `;
                 memoryList.appendChild(div);
             });
         }
         
         function exportMemories() {
-            const data = tokiMemory.exportMemories();
-            const blob = new Blob([data], { type: 'application/json' });
+            const data = enhancedMemory.exportData();
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `toki-memories-${new Date().toISOString().split('T')[0]}.json`;
+            a.download = `toki-enhanced-memory-${new Date().toISOString().split('T')[0]}.json`;
             a.click();
-            alert('记忆已导出！');
+            alert('✅ 记忆数据已导出（包含DNA、记忆、痛点、情绪状态）');
         }
         
         function clearAllMemories() {
-            if (confirm('确定要清除所有记忆吗？此操作不可恢复！')) {
-                tokiMemory.clearMemories();
+            if (confirm('⚠️ 确定要清除所有记忆吗？\n\n这将删除：\n- 所有对话记忆\n- 用户画像\n- 痛觉记录\n- 情绪状态\n\n此操作不可恢复！')) {
+                enhancedMemory.clearMemories();
                 refreshMemories();
-                alert('记忆已清除！');
+                alert('🗑️ 所有记忆已清除');
             }
         }
+        
+        // 记忆搜索
+        document.getElementById('memorySearchInput').addEventListener('input', function(e) {
+            const query = e.target.value.trim();
+            
+            if (query.length === 0) {
+                refreshMemories();
+                return;
+            }
+            
+            const results = enhancedMemory.recall(query, 20);
+            const memoryList = document.getElementById('memoryList');
+            memoryList.innerHTML = '';
+            
+            if (results.length === 0) {
+                memoryList.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">未找到相关记忆</div>';
+                return;
+            }
+            
+            results.forEach(memory => {
+                const div = document.createElement('div');
+                div.style.cssText = 'background: white; padding: 12px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid #667eea;';
+                div.innerHTML = `
+                    <div style="font-size: 12px; color: #999; margin-bottom: 5px;">${new Date(memory.timestamp).toLocaleString()}</div>
+                    <div style="font-weight: bold; margin-bottom: 5px;">${memory.input}</div>
+                    <div style="color: #666; font-size: 13px;">${memory.output.substring(0, 150)}...</div>
+                `;
+                memoryList.appendChild(div);
+            });
+        });
         
         // 注册Service Worker (PWA)
         if ('serviceWorker' in navigator) {
