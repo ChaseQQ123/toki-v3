@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build iOS & Android Apps
 
 on:
   push:
@@ -6,8 +6,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-android:
     runs-on: ubuntu-latest
+    name: Build Android APK
     
     steps:
     - uses: actions/checkout@v3
@@ -25,8 +26,7 @@ jobs:
     
     - name: Install dependencies
       working-directory: ./native-build
-      run: |
-        npm install
+      run: npm install
     
     - name: Build Android APK
       working-directory: ./native-build
@@ -37,8 +37,49 @@ jobs:
         chmod +x gradlew
         ./gradlew assembleDebug
     
-    - name: Upload APK
+    - name: Upload Android APK
       uses: actions/upload-artifact@v3
       with:
-        name: toki-app
+        name: toki-android
         path: native-build/android/app/build/outputs/apk/debug/app-debug.apk
+
+  build-ios:
+    runs-on: macos-latest
+    name: Build iOS App
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Install dependencies
+      working-directory: ./native-build
+      run: npm install
+    
+    - name: Build iOS App
+      working-directory: ./native-build
+      run: |
+        npx cap add ios
+        npx cap sync ios
+    
+    - name: Archive iOS App
+      working-directory: ./native-build/ios/App
+      run: |
+        xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -archivePath build/App.xcarchive archive CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+    
+    - name: Create IPA
+      working-directory: ./native-build/ios/App
+      run: |
+        mkdir -p build/Payload
+        cp -r build/App.xcarchive/Products/Applications/App.app build/Payload/
+        cd build
+        zip -r toki-ios.ipa Payload
+    
+    - name: Upload iOS IPA
+      uses: actions/upload-artifact@v3
+      with:
+        name: toki-ios
+        path: native-build/ios/App/build/toki-ios.ipa
