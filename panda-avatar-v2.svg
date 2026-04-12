@@ -1,0 +1,39 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <!-- 头部 - 白色圆形 -->
+    <circle cx="50" cy="50" r="48" fill="#FFFFFF" stroke="#e0e0e0" stroke-width="1"/>
+    
+    <!-- 左耳朵 - 黑色 -->
+    <ellipse cx="18" cy="18" rx="12" ry="14" fill="#000000"/>
+    
+    <!-- 右耳朵 - 黑色 -->
+    <ellipse cx="82" cy="18" rx="12" ry="14" fill="#000000"/>
+    
+    <!-- 左眼圈 - 标准熊猫黑眼圈（最重要特征） -->
+    <ellipse cx="35" cy="50" rx="20" ry="22" fill="#000000" transform="rotate(-15 35 50)"/>
+    <!-- 左眼白 -->
+    <ellipse cx="34" cy="49" rx="9" ry="11" fill="#FFFFFF" transform="rotate(-15 34 49)"/>
+    <!-- 左眼珠 - 紫色AI眼睛 -->
+    <circle cx="34" cy="49" r="5" fill="#667eea"/>
+    <circle cx="36" cy="47" r="2" fill="#FFFFFF"/>
+    
+    <!-- 右眼圈 - 标准熊猫黑眼圈 -->
+    <ellipse cx="65" cy="50" rx="20" ry="22" fill="#000000" transform="rotate(15 65 50)"/>
+    <!-- 右眼白 -->
+    <ellipse cx="66" cy="49" rx="9" ry="11" fill="#FFFFFF" transform="rotate(15 66 49)"/>
+    <!-- 右眼珠 - 紫色AI眼睛 -->
+    <circle cx="66" cy="49" r="5" fill="#667eea"/>
+    <circle cx="68" cy="47" r="2" fill="#FFFFFF"/>
+    
+    <!-- 鼻子 - 黑色椭圆 -->
+    <ellipse cx="50" cy="68" rx="7" ry="5" fill="#000000"/>
+    
+    <!-- 嘴巴 - 微笑 -->
+    <path d="M 40 76 Q 50 83 60 76" stroke="#000000" stroke-width="2" fill="none" stroke-linecap="round"/>
+    
+    <!-- 腮红 - 粉色 -->
+    <ellipse cx="25" cy="60" rx="8" ry="5" fill="#FFB6C1" opacity="0.5"/>
+    <ellipse cx="75" cy="60" rx="8" ry="5" fill="#FFB6C1" opacity="0.5"/>
+    
+    <!-- AI标识 - 头顶光点 -->
+    <circle cx="50" cy="22" r="3" fill="#667eea" opacity="0.8"/>
+</svg>
