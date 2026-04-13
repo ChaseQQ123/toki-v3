@@ -266,7 +266,10 @@
                 const res = await fetch('https://spark-api-open.xf-yun.com/v1/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SPARK_KEY}` },
-                    body: JSON.stringify({ model: 'spark-lite', messages: [{role:'user',content:msg}], temperature: 0.7 })
+                    body: JSON.stringify({ model: 'spark-lite', messages: [
+                        {role:'system', content:'你是TOKI，一只可爱的熊猫AI助手。你现在正在和用户进行语音通话，用户说话你听着，你回复的话会被语音播报。回答要简短自然，像打电话一样。不要说自己是文本AI或无法语音对话，你确实在语音对话中。'},
+                        {role:'user', content:msg}
+                    ], temperature: 0.7 })
                 });
                 const d = await res.json();
                 return { text: d.choices?.[0]?.message?.content, model: 'spark-lite' };
@@ -278,7 +281,10 @@
                 const res = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ZHIPU_KEY}` },
-                    body: JSON.stringify({ model: modelId, messages: [{role:'user',content:msg}], temperature: 0.7 })
+                    body: JSON.stringify({ model: modelId, messages: [
+                        {role:'system', content:'你是TOKI，一只可爱的熊猫AI助手。你现在正在和用户进行语音通话，用户说话你听着，你回复的话会被语音播报。回答要简短自然，像打电话一样。不要说自己是文本AI或无法语音对话，你确实在语音对话中。'},
+                        {role:'user', content:msg}
+                    ], temperature: 0.7 })
                 });
                 const d = await res.json();
                 return { text: d.choices?.[0]?.message?.content, model: modelId };
