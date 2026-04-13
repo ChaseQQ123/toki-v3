@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TOKI V4.0 - 百度语音版</title>
+    <meta name="theme-color" content="#667eea">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; min-height: 100vh; display: flex; justify-content: center; }
+        .app { width: 100%; max-width: 420px; height: 100vh; background: white; display: flex; flex-direction: column; overflow: hidden; }
+        
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .header-left { display: flex; align-items: center; gap: 8px; }
+        .logo { font-size: 26px; }
+        .title { font-size: 18px; font-weight: bold; }
+        .version { background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 8px; font-size: 10px; }
+        
+        .model-bar { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); padding: 8px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 11px; border-bottom: 1px solid #c8e6c9; }
+        .model-tag { padding: 3px 10px; border-radius: 10px; font-size: 10px; font-weight: 500; background: white; color: #2e7d32; }
+        
+        .content { flex: 1; overflow-y: auto; padding: 15px; }
+        
+        /* 对话 */
+        .chat-area { padding: 0; }
+        .message { margin-bottom: 12px; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .message.bot { display: flex; gap: 8px; }
+        .bot-avatar { width: 34px; height: 34px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+        .bot-content { flex: 1; }
+        .bot-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+        .bot-name { font-size: 10px; color: #999; }
+        .bot-model { font-size: 9px; padding: 2px 8px; border-radius: 8px; background: #e8f5e9; color: #2e7d32; }
+        .bot-text { background: #f8f9fa; padding: 10px 14px; border-radius: 12px 12px 12px 4px; font-size: 13px; line-height: 1.6; color: #333; }
+        .message.user { display: flex; justify-content: flex-end; }
+        .user-text { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px 14px; border-radius: 12px 12px 4px 12px; font-size: 13px; line-height: 1.6; max-width: 80%; }
+        
+        /* 语音通话 */
+        .voice-panel { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; text-align: center; }
+        .panda-face { width: 160px; height: 160px; background: white; border-radius: 50%; position: relative; box-shadow: 0 8px 24px rgba(0,0,0,0.1); margin-bottom: 25px; }
+        .panda-ear { width: 40px; height: 40px; background: #1a1a1a; border-radius: 50%; position: absolute; top: -6px; }
+        .panda-ear.left { left: 8px; }
+        .panda-ear.right { right: 8px; }
+        .panda-eye-patch { width: 48px; height: 52px; background: #1a1a1a; border-radius: 50%; position: absolute; top: 40px; }
+        .panda-eye-patch.left { left: 16px; transform: rotate(5deg); }
+        .panda-eye-patch.right { right: 16px; transform: rotate(-5deg); }
+        .panda-eye { width: 20px; height: 20px; background: white; border-radius: 50%; position: absolute; top: 52px; }
+        .panda-eye.left { left: 30px; }
+        .panda-eye.right { right: 30px; }
+        .panda-pupil { width: 10px; height: 10px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 50%; position: absolute; top: 56px; }
+        .panda-pupil.left { left: 36px; }
+        .panda-pupil.right { right: 36px; }
+        .panda-nose { width: 16px; height: 12px; background: #1a1a1a; border-radius: 50%; position: absolute; top: 88px; left: 50%; transform: translateX(-50%); }
+        .panda-mouth { width: 24px; height: 12px; position: absolute; top: 104px; left: 50%; transform: translateX(-50%); }
+        .panda-mouth::before, .panda-mouth::after { content: ''; width: 12px; height: 6px; border: 2px solid #1a1a1a; border-top: none; border-radius: 0 0 50% 50%; position: absolute; }
+        .panda-mouth::before { left: 0; }
+        .panda-mouth::after { right: 0; }
+        .panda-face.speaking .panda-mouth { animation: speaking 0.15s infinite; }
+        @keyframes speaking { 0%, 100% { height: 12px; } 50% { height: 20px; } }
+        
+        .call-status { font-size: 15px; color: #333; margin-bottom: 8px; }
+        .call-hint { font-size: 12px; color: #666; margin-bottom: 15px; }
+        .call-btn { padding: 12px 35px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 22px; font-size: 14px; cursor: pointer; }
+        
+        /* 输入 */
+        .input-area { background: white; padding: 10px 15px; border-top: 1px solid #f0f0f0; }
+        .input-tools { display: flex; gap: 6px; margin-bottom: 8px; }
+        .tool-btn { display: flex; align-items: center; gap: 5px; padding: 8px 14px; background: #f8f9fa; border: none; border-radius: 18px; font-size: 12px; color: #666; cursor: pointer; transition: all 0.3s; }
+        .tool-btn:hover { background: #667eea; color: white; }
+        .tool-btn.active { background: #667eea; color: white; }
+        .input-wrapper { display: flex; gap: 8px; align-items: flex-end; }
+        .input-box { flex: 1; background: #f8f9fa; border-radius: 20px; padding: 10px 16px; display: flex; align-items: center; }
+        .input-box input { flex: 1; border: none; background: none; font-size: 13px; outline: none; }
+        .send-btn { width: 40px; height: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 50%; color: white; font-size: 16px; cursor: pointer; }
+        .send-btn:disabled { background: #ccc; }
+        
+        /* 底部导航 */
+        .bottom-nav { background: white; border-top: 1px solid #f0f0f0; display: flex; justify-content: space-around; padding: 8px 0; padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 4px 20px; transition: all 0.3s; }
+        .nav-item.active { color: #667eea; }
+        .nav-icon { font-size: 20px; }
+        .nav-label { font-size: 10px; }
+        
+        .tab { display: none; }
+        .tab.active { display: block; }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="header">
+            <div class="header-left">
+                <span class="logo">🐼</span>
+                <span class="title">TOKI</span>
+                <span class="version">V4.0</span>
+            </div>
+        </div>
+        
+        <div class="model-bar">
+            <span>✅ 百度语音API</span>
+            <span class="model-tag" id="modelTag">🔥 星火 Lite</span>
+        </div>
+        
+        <div class="content">
+            <!-- 对话Tab -->
+            <div class="tab active" id="chatTab">
+                <div class="chat-area" id="chatArea">
+                    <div class="message bot">
+                        <div class="bot-avatar">🐼</div>
+                        <div class="bot-content">
+                            <div class="bot-header">
+                                <span class="bot-name">TOKI</span>
+                                <span class="bot-model">✅ 百度语音</span>
+                            </div>
+                            <div class="bot-text">
+                                你好！我是 TOKI 🐼<br><br>
+                                ✅ <b>百度语音API已接入</b><br>
+                                ✅ 每日500次免费额度<br><br>
+                                点击下方"🎤 语音"开始语音对话！
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 语音Tab -->
+            <div class="tab" id="voiceTab">
+                <div class="voice-panel">
+                    <div class="panda-face" id="pandaFace">
+                        <div class="panda-ear left"></div>
+                        <div class="panda-ear right"></div>
+                        <div class="panda-eye-patch left"></div>
+                        <div class="panda-eye-patch right"></div>
+                        <div class="panda-eye left"></div>
+                        <div class="panda-eye right"></div>
+                        <div class="panda-pupil left"></div>
+                        <div class="panda-pupil right"></div>
+                        <div class="panda-nose"></div>
+                        <div class="panda-mouth"></div>
+                    </div>
+                    <div class="call-status" id="voiceStatus">点击开始语音通话</div>
+                    <div class="call-hint">百度语音API（每日500次免费）</div>
+                    <button class="call-btn" id="voiceBtn" onclick="toggleVoice()">🎤 开始通话</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="input-area">
+            <div class="input-tools">
+                <button class="tool-btn" onclick="switchTab('chat')">💬 对话</button>
+                <button class="tool-btn" onclick="switchTab('voice')">🎤 语音</button>
+            </div>
+            <div class="input-wrapper">
+                <div class="input-box">
+                    <input type="text" id="inputText" placeholder="输入消息..." onkeydown="if(event.key==='Enter')send()">
+                </div>
+                <button class="send-btn" onclick="send()">➤</button>
+            </div>
+        </div>
+        
+        <div class="bottom-nav">
+            <div class="nav-item active" onclick="switchNav(this)">
+                <span class="nav-icon">💬</span>
+                <span class="nav-label">对话</span>
+            </div>
+            <div class="nav-item" onclick="switchNav(this);switchTab('voice')">
+                <span class="nav-icon">🎤</span>
+                <span class="nav-label">语音</span>
+            </div>
+            <div class="nav-item" onclick="switchNav(this)">
+                <span class="nav-icon">👤</span>
+                <span class="nav-label">我的</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ 百度语音API配置 ============
+        const BAIDU = {
+            APP_ID: '122852124',
+            API_KEY: 'KzPJnG6YSZXZKM1ic9KsrAGi',
+            SECRET_KEY: 'JGACwssuiimzcyJOJD9JNaIacYZchdze'
+        };
+        
+        const SPARK_KEY = 'a5f5156fb7cb051d55866912f67178d0';
+        const ZHIPU_KEY = 'c4911cf15f844167bd26301e25622cf1.n1BU10ytXbnQ6N5d';
+        
+        let baiduToken = null;
+        let mediaRecorder = null;
+        let isRecording = false;
+        let audioChunks = [];
+        
+        // 获取百度Token
+        async function getBaiduToken() {
+            if (baiduToken) return baiduToken;
+            
+            const url = `https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=${BAIDU.API_KEY}&client_secret=${BAIDU.SECRET_KEY}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            baiduToken = data.access_token;
+            return baiduToken;
+        }
+        
+        // 百度语音合成
+        async function baiduTTS(text) {
+            const token = await getBaiduToken();
+            const url = `https://tsn.baidu.com/text2audio?tex=${encodeURIComponent(text)}&tok=${token}&cuid=TOKI&ctp=1&lan=zh&spd=5&pit=5&vol=9&per=4&aue=6`;
+            
+            const res = await fetch(url);
+            const blob = await res.blob();
+            return URL.createObjectURL(blob);
+        }
+        
+        // 播放语音
+        async function speak(text) {
+            const audioUrl = await baiduTTS(text);
+            const audio = new Audio(audioUrl);
+            await audio.play();
+        }
+        
+        // 百度语音识别
+        async function baiduASR(audioBlob) {
+            const token = await getBaiduToken();
+            const url = `https://vop.baidu.com/server_api?cuid=TOKI&token=${token}&dev_pid=1537&format=wav&rate=16000&channel=1`;
+            
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'audio/wav; rate=16000' },
+                body: audioBlob
+            });
+            
+            const data = await res.json();
+            return data.result?.[0] || '';
+        }
+        
+        // ============ AI调用 ============
+        async function callAI(msg) {
+            try {
+                const res = await fetch('https://spark-api-open.xf-yun.com/v1/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SPARK_KEY}` },
+                    body: JSON.stringify({
+                        model: 'spark-lite',
+                        messages: [
+                            {role:'system', content:'你是TOKI，一只可爱的熊猫AI助手。你正在和用户进行语音通话。回答要简短自然，像打电话一样。'},
+                            {role:'user', content:msg}
+                        ],
+                        temperature: 0.7
+                    })
+                });
+                const d = await res.json();
+                return d.choices?.[0]?.message?.content || '好的';
+            } catch(e) {
+                return '网络问题';
+            }
+        }
+        
+        // ============ UI ============
+        function switchTab(id) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(id + 'Tab').classList.add('active');
+        }
+        
+        function switchNav(el) {
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            el.classList.add('active');
+        }
+        
+        async function send() {
+            const inp = document.getElementById('inputText');
+            const txt = inp.value.trim();
+            if (!txt) return;
+            
+            addMsg('user', txt);
+            inp.value = '';
+            
+            const reply = await callAI(txt);
+            addMsg('bot', reply);
+        }
+        
+        function addMsg(type, txt) {
+            const a = document.getElementById('chatArea');
+            const m = document.createElement('div');
+            m.className = `message ${type}`;
+            m.innerHTML = type === 'user' 
+                ? `<div class="user-text">${txt}</div>`
+                : `<div class="bot-avatar">🐼</div><div class="bot-content"><div class="bot-header"><span class="bot-name">TOKI</span><span class="bot-model">🔥 星火 Lite</span></div><div class="bot-text">${txt}</div></div>`;
+            a.appendChild(m);
+            a.scrollTop = a.scrollHeight;
+        }
+        
+        // ============ 语音通话 ============
+        async function toggleVoice() {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        }
+        
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                
+                mediaRecorder.ondataavailable = (e) => {
+                    audioChunks.push(e.data);
+                };
+                
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    document.getElementById('voiceStatus').textContent = '识别中...';
+                    
+                    // 百度语音识别
+                    const text = await baiduASR(audioBlob);
+                    document.getElementById('voiceStatus').textContent = `你说: "${text}"`;
+                    
+                    if (text) {
+                        // AI回复
+                        const reply = await callAI(text);
+                        
+                        // 百度语音合成
+                        document.getElementById('pandaFace').classList.add('speaking');
+                        await speak(reply);
+                        document.getElementById('pandaFace').classList.remove('speaking');
+                        
+                        document.getElementById('voiceStatus').textContent = reply;
+                    }
+                };
+                
+                mediaRecorder.start();
+                isRecording = true;
+                document.getElementById('voiceStatus').textContent = '正在聆听...请说话';
+                document.getElementById('voiceBtn').textContent = '🔴 结束';
+                
+            } catch(e) {
+                alert('请允许麦克风权限');
+            }
+        }
+        
+        function stopRecording() {
+            if (mediaRecorder) {
+                mediaRecorder.stop();
+            }
+            isRecording = false;
+            document.getElementById('voiceStatus').textContent = '点击开始语音通话';
+            document.getElementById('voiceBtn').textContent = '🎤 开始通话';
+        }
+        
+        console.log('🐼 TOKI V4.0 - 百度语音版');
+    </script>
+</body>
+</html>
