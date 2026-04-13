@@ -191,8 +191,8 @@
             <div class="input-area">
                 <div class="input-tools">
                     <button class="tool-btn" onclick="openFuncPanel('voice')">🎤 语音通话</button>
+                    <button class="tool-btn" onclick="openFuncPanel('video')">📹 视频通话</button>
                     <button class="tool-btn" onclick="openFuncPanel('image')">🎨 画图</button>
-                    <button class="tool-btn" onclick="openFuncPanel('code')">💻 编程</button>
                     <button class="tool-btn" onclick="document.getElementById('imageInput').click()">📷 图片</button>
                 </div>
                 <div class="input-wrapper">
@@ -343,7 +343,45 @@
             const panels = {
                 'voice': {
                     title: '🎤 语音通话',
-                    content: `<div style="text-align:center;padding:60px 20px;"><div style="font-size:80px;margin-bottom:20px;">🐼</div><div style="font-size:18px;color:#333;margin-bottom:10px;">语音通话</div><div style="font-size:14px;color:#666;margin-bottom:30px;">和熊猫TOKI打电话</div><button class="tool-btn" style="padding:12px 30px;font-size:14px;" onclick="alert('语音通话功能开发中')">🎤 开始通话</button></div>`
+                    content: `<div style="text-align:center;padding:40px 20px;">
+                        <div class="panda-face" id="pandaFace" style="width:160px;height:160px;background:white;border-radius:50%;position:relative;box-shadow:0 8px 24px rgba(0,0,0,0.1);margin:0 auto 20px;">
+                            <div class="panda-ear" style="width:40px;height:40px;background:#1a1a1a;border-radius:50%;position:absolute;top:-6px;left:8px;"></div>
+                            <div class="panda-ear" style="width:40px;height:40px;background:#1a1a1a;border-radius:50%;position:absolute;top:-6px;right:8px;"></div>
+                            <div class="panda-eye-patch" style="width:48px;height:52px;background:#1a1a1a;border-radius:50%;position:absolute;top:40px;left:16px;transform:rotate(5deg);"></div>
+                            <div class="panda-eye-patch" style="width:48px;height:52px;background:#1a1a1a;border-radius:50%;position:absolute;top:40px;right:16px;transform:rotate(-5deg);"></div>
+                            <div class="panda-eye" style="width:20px;height:20px;background:white;border-radius:50%;position:absolute;top:52px;left:30px;"></div>
+                            <div class="panda-eye" style="width:20px;height:20px;background:white;border-radius:50%;position:absolute;top:52px;right:30px;"></div>
+                            <div class="panda-pupil" style="width:10px;height:10px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:50%;position:absolute;top:56px;left:36px;"></div>
+                            <div class="panda-pupil" style="width:10px;height:10px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:50%;position:absolute;top:56px;right:36px;"></div>
+                            <div class="panda-nose" style="width:16px;height:12px;background:#1a1a1a;border-radius:50%;position:absolute;top:88px;left:50%;transform:translateX(-50%);"></div>
+                            <div class="panda-mouth" id="pandaMouth" style="width:24px;height:12px;position:absolute;top:104px;left:50%;transform:translateX(-50%);"></div>
+                        </div>
+                        <div style="font-size:16px;color:#333;margin-bottom:8px;" id="voiceStatus">点击开始语音通话</div>
+                        <div style="font-size:13px;color:#666;margin-bottom:20px;">和熊猫TOKI打电话</div>
+                        <button class="tool-btn" id="voiceBtn" style="padding:12px 30px;font-size:14px;" onclick="toggleVoiceCall()">🎤 开始通话</button>
+                    </div>
+                    <style>.panda-mouth::before,.panda-mouth::after{content:'';width:12px;height:6px;border:2px solid #1a1a1a;border-top:none;border-radius:0 0 50% 50%;position:absolute;}.panda-mouth::before{left:0;}.panda-mouth::after{right:0;}.panda.speaking .panda-mouth{animation:speaking 0.15s infinite;}@keyframes speaking{0%,100%{height:12px;}50%{height:20px;}}</style>`
+                },
+                'video': {
+                    title: '📹 视频通话',
+                    content: `<div style="text-align:center;padding:40px 20px;">
+                        <div class="panda-face-video" id="pandaFaceVideo" style="width:180px;height:180px;background:white;border-radius:50%;position:relative;box-shadow:0 10px 30px rgba(0,0,0,0.15);margin:0 auto 25px;">
+                            <div style="width:45px;height:45px;background:#1a1a1a;border-radius:50%;position:absolute;top:-8px;left:10px;"></div>
+                            <div style="width:45px;height:45px;background:#1a1a1a;border-radius:50%;position:absolute;top:-8px;right:10px;"></div>
+                            <div style="width:55px;height:58px;background:#1a1a1a;border-radius:50%;position:absolute;top:45px;left:18px;transform:rotate(5deg);"></div>
+                            <div style="width:55px;height:58px;background:#1a1a1a;border-radius:50%;position:absolute;top:45px;right:18px;transform:rotate(-5deg);"></div>
+                            <div style="width:22px;height:22px;background:white;border-radius:50%;position:absolute;top:58px;left:34px;"></div>
+                            <div style="width:22px;height:22px;background:white;border-radius:50%;position:absolute;top:58px;right:34px;"></div>
+                            <div class="pupil-video" style="width:11px;height:11px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:50%;position:absolute;top:63px;left:40px;"></div>
+                            <div class="pupil-video" style="width:11px;height:11px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:50%;position:absolute;top:63px;right:40px;"></div>
+                            <div style="width:18px;height:13px;background:#1a1a1a;border-radius:50%;position:absolute;top:100px;left:50%;transform:translateX(-50%);"></div>
+                            <div class="mouth-video" id="mouthVideo" style="width:28px;height:14px;position:absolute;top:118px;left:50%;transform:translateX(-50%);"></div>
+                        </div>
+                        <div style="font-size:16px;color:#333;margin-bottom:8px;" id="videoStatus">点击开始视频通话</div>
+                        <div style="font-size:13px;color:#666;margin-bottom:20px;">和熊猫TOKI面对面聊天</div>
+                        <button class="tool-btn" id="videoBtn" style="padding:12px 30px;font-size:14px;" onclick="toggleVideoCall()">📹 开始通话</button>
+                    </div>
+                    <style>.mouth-video::before,.mouth-video::after{content:'';width:14px;height:7px;border:2px solid #1a1a1a;border-top:none;border-radius:0 0 50% 50%;position:absolute;}.mouth-video::before{left:0;}.mouth-video::after{right:0;}.panda-face-video.speaking .mouth-video{animation:speakingVideo 0.15s infinite;}@keyframes speakingVideo{0%,100%{height:14px;}50%{height:22px;}}</style>`
                 },
                 'image': {
                     title: '🎨 图像生成',
@@ -475,6 +513,122 @@
         function regenerate() { alert('重新生成功能开发中'); }
         function collectMsg() { alert('已收藏 ⭐'); }
         function newChat() { document.getElementById('chatArea').innerHTML = ''; }
+        
+        // ============ 语音通话 ============
+        let voiceRecognition = null;
+        let isVoiceActive = false;
+        
+        function toggleVoiceCall() {
+            if (isVoiceActive) {
+                stopVoiceCall();
+            } else {
+                startVoiceCall();
+            }
+        }
+        
+        async function startVoiceCall() {
+            if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+                alert('请使用Chrome浏览器');
+                return;
+            }
+            
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            voiceRecognition = new SR();
+            voiceRecognition.continuous = true;
+            voiceRecognition.lang = 'zh-CN';
+            
+            voiceRecognition.onresult = async (e) => {
+                const txt = e.results[e.results.length - 1][0].transcript;
+                document.getElementById('voiceStatus').textContent = `你说: "${txt}"`;
+                
+                // 熊猫说话动画
+                const panda = document.getElementById('pandaFace');
+                if (panda) panda.classList.add('speaking');
+                
+                const { text } = await callAI(txt);
+                document.getElementById('voiceStatus').textContent = text;
+                
+                // 语音播报
+                const u = new SpeechSynthesisUtterance(text);
+                u.lang = 'zh-CN';
+                u.onend = () => {
+                    if (panda) panda.classList.remove('speaking');
+                };
+                speechSynthesis.speak(u);
+            };
+            
+            voiceRecognition.start();
+            isVoiceActive = true;
+            document.getElementById('voiceStatus').textContent = '正在聆听...请说话';
+            document.getElementById('voiceBtn').textContent = '🔴 结束通话';
+        }
+        
+        function stopVoiceCall() {
+            if (voiceRecognition) voiceRecognition.stop();
+            isVoiceActive = false;
+            document.getElementById('voiceStatus').textContent = '点击开始语音通话';
+            document.getElementById('voiceBtn').textContent = '🎤 开始通话';
+            const panda = document.getElementById('pandaFace');
+            if (panda) panda.classList.remove('speaking');
+        }
+        
+        // ============ 视频通话 ============
+        let videoRecognition = null;
+        let isVideoActive = false;
+        
+        function toggleVideoCall() {
+            if (isVideoActive) {
+                stopVideoCall();
+            } else {
+                startVideoCall();
+            }
+        }
+        
+        async function startVideoCall() {
+            if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+                alert('请使用Chrome浏览器');
+                return;
+            }
+            
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            videoRecognition = new SR();
+            videoRecognition.continuous = true;
+            videoRecognition.lang = 'zh-CN';
+            
+            videoRecognition.onresult = async (e) => {
+                const txt = e.results[e.results.length - 1][0].transcript;
+                document.getElementById('videoStatus').textContent = `你说: "${txt}"`;
+                
+                // 熊猫说话动画
+                const panda = document.getElementById('pandaFaceVideo');
+                if (panda) panda.classList.add('speaking');
+                
+                const { text } = await callAI(txt);
+                document.getElementById('videoStatus').textContent = text;
+                
+                // 语音播报
+                const u = new SpeechSynthesisUtterance(text);
+                u.lang = 'zh-CN';
+                u.onend = () => {
+                    if (panda) panda.classList.remove('speaking');
+                };
+                speechSynthesis.speak(u);
+            };
+            
+            videoRecognition.start();
+            isVideoActive = true;
+            document.getElementById('videoStatus').textContent = '正在聆听...请说话';
+            document.getElementById('videoBtn').textContent = '🔴 结束通话';
+        }
+        
+        function stopVideoCall() {
+            if (videoRecognition) videoRecognition.stop();
+            isVideoActive = false;
+            document.getElementById('videoStatus').textContent = '点击开始视频通话';
+            document.getElementById('videoBtn').textContent = '📹 开始通话';
+            const panda = document.getElementById('pandaFaceVideo');
+            if (panda) panda.classList.remove('speaking');
+        }
         
         function handleImageUpload(e) {
             const file = e.target.files[0];
