@@ -549,18 +549,26 @@
                 
                 // 熊猫说话动画
                 const panda = document.getElementById('pandaFace');
-                if (panda) panda.classList.add('speaking');
                 
                 const { text } = await callAI(txt);
                 document.getElementById('voiceStatus').textContent = text;
                 
-                // 语音播报
-                const u = new SpeechSynthesisUtterance(text);
-                u.lang = 'zh-CN';
-                u.onend = () => {
-                    if (panda) panda.classList.remove('speaking');
-                };
-                speechSynthesis.speak(u);
+                // 语音播报（增强版）
+                if ('speechSynthesis' in window) {
+                    speechSynthesis.cancel();
+                    const u = new SpeechSynthesisUtterance(text);
+                    u.lang = 'zh-CN';
+                    u.rate = 1.0;
+                    
+                    const voices = speechSynthesis.getVoices();
+                    const zhVoice = voices.find(v => v.lang.includes('zh'));
+                    if (zhVoice) u.voice = zhVoice;
+                    
+                    u.onstart = () => { if (panda) panda.classList.add('speaking'); };
+                    u.onend = () => { if (panda) panda.classList.remove('speaking'); };
+                    
+                    speechSynthesis.speak(u);
+                }
             };
             
             voiceRecognition.start();
@@ -607,18 +615,26 @@
                 
                 // 熊猫说话动画
                 const panda = document.getElementById('pandaFaceVideo');
-                if (panda) panda.classList.add('speaking');
                 
                 const { text } = await callAI(txt);
                 document.getElementById('videoStatus').textContent = text;
                 
-                // 语音播报
-                const u = new SpeechSynthesisUtterance(text);
-                u.lang = 'zh-CN';
-                u.onend = () => {
-                    if (panda) panda.classList.remove('speaking');
-                };
-                speechSynthesis.speak(u);
+                // 语音播报（增强版）
+                if ('speechSynthesis' in window) {
+                    speechSynthesis.cancel();
+                    const u = new SpeechSynthesisUtterance(text);
+                    u.lang = 'zh-CN';
+                    u.rate = 1.0;
+                    
+                    const voices = speechSynthesis.getVoices();
+                    const zhVoice = voices.find(v => v.lang.includes('zh'));
+                    if (zhVoice) u.voice = zhVoice;
+                    
+                    u.onstart = () => { if (panda) panda.classList.add('speaking'); };
+                    u.onend = () => { if (panda) panda.classList.remove('speaking'); };
+                    
+                    speechSynthesis.speak(u);
+                }
             };
             
             videoRecognition.start();
@@ -655,6 +671,14 @@
         }
         
         console.log('🐼 TOKI V4.0 - 豆包风格界面');
+        
+        // 预加载语音列表
+        if ('speechSynthesis' in window) {
+            speechSynthesis.getVoices();
+            speechSynthesis.onvoiceschanged = () => {
+                console.log('🔊 语音列表已加载:', speechSynthesis.getVoices().length, '个');
+            };
+        }
     </script>
 </body>
 </html>
