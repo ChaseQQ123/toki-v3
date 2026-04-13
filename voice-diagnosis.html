@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>语音诊断</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 400px; margin: 0 auto; }
+        .test-item { background: #f5f5f5; padding: 15px; margin-bottom: 10px; border-radius: 10px; }
+        .test-title { font-weight: bold; margin-bottom: 10px; }
+        .test-result { font-size: 14px; margin-bottom: 10px; }
+        .btn { background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-size: 14px; cursor: pointer; margin-right: 10px; margin-bottom: 10px; }
+        .btn:active { background: #764ba2; }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+    </style>
+</head>
+<body>
+    <h1>🔊 语音功能诊断</h1>
+    
+    <div class="test-item">
+        <div class="test-title">1. 语音识别</div>
+        <div class="test-result" id="srResult">检测中...</div>
+        <button class="btn" onclick="testSR()">测试语音识别</button>
+        <div id="srText"></div>
+    </div>
+    
+    <div class="test-item">
+        <div class="test-title">2. 语音合成</div>
+        <div class="test-result" id="ssResult">检测中...</div>
+        <button class="btn" onclick="testSS()">测试语音播放</button>
+    </div>
+    
+    <div class="test-item">
+        <div class="test-title">3. 可用语音列表</div>
+        <div class="test-result" id="voicesResult">加载中...</div>
+        <div id="voicesList" style="font-size:12px;max-height:200px;overflow-y:auto;"></div>
+    </div>
+    
+    <div class="test-item">
+        <div class="test-title">4. 浏览器信息</div>
+        <div class="test-result" id="browserInfo"></div>
+    </div>
+
+    <script>
+        // 1. 检测语音识别
+        const hasSR = 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window;
+        document.getElementById('srResult').innerHTML = hasSR 
+            ? '<span class="success">✅ 支持</span>' 
+            : '<span class="error">❌ 不支持</span>';
+        
+        // 2. 检测语音合成
+        const hasSS = 'speechSynthesis' in window;
+        document.getElementById('ssResult').innerHTML = hasSS 
+            ? '<span class="success">✅ 支持</span>' 
+            : '<span class="error">❌ 不支持</span>';
+        
+        // 3. 浏览器信息
+        const ua = navigator.userAgent;
+        document.getElementById('browserInfo').innerHTML = `
+            UA: ${ua.substring(0, 50)}...<br>
+            平台: ${navigator.platform}<br>
+            语言: ${navigator.language}
+        `;
+        
+        // 语音列表
+        function loadVoices() {
+            const voices = speechSynthesis.getVoices();
+            if (voices.length > 0) {
+                document.getElementById('voicesResult').innerHTML = `<span class="success">✅ ${voices.length} 个语音</span>`;
+                const zhVoices = voices.filter(v => v.lang.includes('zh'));
+                document.getElementById('voicesList').innerHTML = 
+                    '<b>中文语音:</b><br>' + 
+                    (zhVoices.length > 0 
+                        ? zhVoices.map(v => `• ${v.name} (${v.lang})`).join('<br>')
+                        : '<span class="error">无中文语音</span>') +
+                    '<br><br><b>所有语音:</b><br>' +
+                    voices.slice(0, 10).map(v => `• ${v.name} (${v.lang})`).join('<br>');
+            }
+        }
+        
+        if (hasSS) {
+            loadVoices();
+            speechSynthesis.onvoiceschanged = loadVoices;
+        }
+        
+        // 测试语音识别
+        function testSR() {
+            if (!hasSR) {
+                alert('浏览器不支持语音识别');
+                return;
+            }
+            
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const rec = new SR();
+            rec.lang = 'zh-CN';
+            
+            document.getElementById('srText').textContent = '正在聆听...';
+            
+            rec.onresult = (e) => {
+                const text = e.results[0][0].transcript;
+                document.getElementById('srText').innerHTML = `<span class="success">识别成功: "${text}"</span>`;
+            };
+            
+            rec.onerror = (e) => {
+                document.getElementById('srText').innerHTML = `<span class="error">错误: ${e.error}</span>`;
+            };
+            
+            rec.start();
+        }
+        
+        // 测试语音合成
+        function testSS() {
+            if (!hasSS) {
+                alert('浏览器不支持语音合成');
+                return;
+            }
+            
+            const u = new SpeechSynthesisUtterance('你好，我是TOKI，语音测试成功！');
+            u.lang = 'zh-CN';
+            
+            const voices = speechSynthesis.getVoices();
+            const zhVoice = voices.find(v => v.lang.includes('zh'));
+            if (zhVoice) {
+                u.voice = zhVoice;
+                console.log('使用语音:', zhVoice.name);
+            }
+            
+            u.onstart = () => console.log('开始播放');
+            u.onend = () => console.log('播放结束');
+            u.onerror = (e) => console.error('播放错误:', e);
+            
+            speechSynthesis.cancel();
+            speechSynthesis.speak(u);
+            
+            alert('已发送语音请求，请等待播放...');
+        }
+    </script>
+</body>
+</html>
