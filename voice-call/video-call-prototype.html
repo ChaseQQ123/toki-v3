@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TOKI 视频通话原型</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        .container {
+            width: 100%;
+            max-width: 500px;
+            height: 100vh;
+            max-height: 800px;
+            background: linear-gradient(180deg, #2d3436 0%, #000000 100%);
+            border-radius: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* 熊猫容器 */
+        .panda-container {
+            width: 100%;
+            height: 70%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        
+        /* 熊猫形象 - CSS绘制 */
+        .panda {
+            width: 280px;
+            height: 280px;
+            position: relative;
+            transition: transform 0.3s;
+        }
+        
+        /* 头部 */
+        .panda-head {
+            width: 240px;
+            height: 220px;
+            background: white;
+            border-radius: 50% 50% 45% 45%;
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        
+        /* 耳朵 */
+        .panda-ear {
+            width: 70px;
+            height: 70px;
+            background: #1a1a1a;
+            border-radius: 50%;
+            position: absolute;
+            top: 0;
+        }
+        .panda-ear.left {
+            left: 15px;
+        }
+        .panda-ear.right {
+            right: 15px;
+        }
+        
+        /* 眼眶（大黑眼圈） */
+        .panda-eye-patch {
+            width: 85px;
+            height: 90px;
+            background: #1a1a1a;
+            border-radius: 50% 50% 45% 45%;
+            position: absolute;
+            top: 60px;
+            transform: rotate(-5deg);
+        }
+        .panda-eye-patch.left {
+            left: 25px;
+            transform: rotate(5deg);
+        }
+        .panda-eye-patch.right {
+            right: 25px;
+            transform: rotate(-5deg);
+        }
+        
+        /* 眼睛 */
+        .panda-eye {
+            width: 35px;
+            height: 35px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 85px;
+        }
+        .panda-eye.left {
+            left: 50px;
+        }
+        .panda-eye.right {
+            right: 50px;
+        }
+        
+        /* 瞳孔 - 紫色代表AI智能 */
+        .panda-pupil {
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            position: absolute;
+            top: 90px;
+            transition: all 0.3s;
+        }
+        .panda-pupil.left {
+            left: 60px;
+        }
+        .panda-pupil.right {
+            right: 60px;
+        }
+        .panda-pupil::after {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 3px;
+            left: 3px;
+        }
+        
+        /* 鼻子 */
+        .panda-nose {
+            width: 25px;
+            height: 18px;
+            background: #1a1a1a;
+            border-radius: 50% 50% 40% 40%;
+            position: absolute;
+            top: 130px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        /* 嘴巴 */
+        .panda-mouth {
+            width: 40px;
+            height: 20px;
+            position: absolute;
+            top: 155px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .panda-mouth::before,
+        .panda-mouth::after {
+            content: '';
+            width: 20px;
+            height: 10px;
+            border: 3px solid #1a1a1a;
+            border-top: none;
+            border-radius: 0 0 50% 50%;
+            position: absolute;
+            top: 0;
+        }
+        .panda-mouth::before {
+            left: 0;
+        }
+        .panda-mouth::after {
+            right: 0;
+        }
+        
+        /* 说话动画 */
+        .panda.speaking .panda-mouth {
+            animation: speaking 0.15s infinite;
+        }
+        @keyframes speaking {
+            0%, 100% { 
+                height: 20px;
+                transform: translateX(-50%) scaleY(1);
+            }
+            50% { 
+                height: 30px;
+                transform: translateX(-50%) scaleY(1.5);
+            }
+        }
+        
+        /* 眨眼动画 */
+        .panda-blink {
+            width: 240px;
+            height: 10px;
+            background: #1a1a1a;
+            position: absolute;
+            top: 85px;
+            left: 50%;
+            transform: translateX(-50%) scaleY(0);
+            opacity: 0;
+            z-index: 10;
+        }
+        .panda.blinking .panda-blink {
+            animation: blink 0.15s;
+        }
+        @keyframes blink {
+            0%, 100% { 
+                transform: translateX(-50%) scaleY(0);
+                opacity: 0;
+            }
+            50% { 
+                transform: translateX(-50%) scaleY(1);
+                opacity: 1;
+            }
+        }
+        
+        /* 表情 - 开心 */
+        .panda.happy .panda-pupil {
+            transform: scale(0.8);
+        }
+        
+        /* 表情 - 思考 */
+        .panda.thinking .panda-pupil.left {
+            left: 55px;
+        }
+        .panda.thinking .panda-pupil.right {
+            right: 65px;
+        }
+        
+        /* 脸红 */
+        .panda-blush {
+            width: 40px;
+            height: 20px;
+            background: rgba(255, 150, 150, 0.3);
+            border-radius: 50%;
+            position: absolute;
+            top: 135px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .panda-blush.left {
+            left: 30px;
+        }
+        .panda-blush.right {
+            right: 30px;
+        }
+        .panda.happy .panda-blush {
+            opacity: 1;
+        }
+        
+        /* 底部控制区 */
+        .controls-area {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 30px;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+        }
+        
+        /* 状态文字 */
+        .status-bar {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .status-text {
+            color: white;
+            font-size: 18px;
+            font-weight: 500;
+        }
+        .status-subtext {
+            color: rgba(255,255,255,0.6);
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        
+        /* 控制按钮 */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .control-btn.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .control-btn.danger {
+            background: #ff4757;
+            color: white;
+        }
+        .control-btn.secondary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+        .control-btn:hover {
+            transform: scale(1.1);
+        }
+        .control-btn.active {
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4); }
+            50% { box-shadow: 0 0 0 15px rgba(102, 126, 234, 0); }
+        }
+        
+        /* 音量指示器 */
+        .volume-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+            margin-bottom: 20px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .volume-indicator.active {
+            opacity: 1;
+        }
+        .volume-bar {
+            width: 4px;
+            height: 20px;
+            background: #667eea;
+            border-radius: 2px;
+            transition: height 0.05s;
+        }
+        
+        /* 字幕 */
+        .subtitle {
+            position: absolute;
+            bottom: 150px;
+            left: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            font-size: 16px;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s;
+        }
+        .subtitle.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 熊猫容器 -->
+        <div class="panda-container">
+            <div class="panda" id="panda">
+                <!-- 耳朵 -->
+                <div class="panda-ear left"></div>
+                <div class="panda-ear right"></div>
+                
+                <!-- 头部 -->
+                <div class="panda-head">
+                    <!-- 眼眶 -->
+                    <div class="panda-eye-patch left"></div>
+                    <div class="panda-eye-patch right"></div>
+                    
+                    <!-- 眼睛 -->
+                    <div class="panda-eye left"></div>
+                    <div class="panda-eye right"></div>
+                    
+                    <!-- 瞳孔 -->
+                    <div class="panda-pupil left"></div>
+                    <div class="panda-pupil right"></div>
+                    
+                    <!-- 脸红 -->
+                    <div class="panda-blush left"></div>
+                    <div class="panda-blush right"></div>
+                    
+                    <!-- 鼻子 -->
+                    <div class="panda-nose"></div>
+                    
+                    <!-- 嘴巴 -->
+                    <div class="panda-mouth"></div>
+                </div>
+                
+                <!-- 眨眼层 -->
+                <div class="panda-blink"></div>
+            </div>
+        </div>
+        
+        <!-- 字幕 -->
+        <div class="subtitle" id="subtitle"></div>
+        
+        <!-- 底部控制区 -->
+        <div class="controls-area">
+            <!-- 音量指示器 -->
+            <div class="volume-indicator" id="volumeIndicator">
+                <div class="volume-bar" style="height: 10px;"></div>
+                <div class="volume-bar" style="height: 15px;"></div>
+                <div class="volume-bar" style="height: 20px;"></div>
+                <div class="volume-bar" style="height: 25px;"></div>
+                <div class="volume-bar" style="height: 20px;"></div>
+                <div class="volume-bar" style="height: 15px;"></div>
+                <div class="volume-bar" style="height: 10px;"></div>
+            </div>
+            
+            <!-- 状态栏 -->
+            <div class="status-bar">
+                <div class="status-text" id="statusText">点击开始视频通话</div>
+                <div class="status-subtext" id="statusSubtext">和熊猫TOKI面对面聊天</div>
+            </div>
+            
+            <!-- 控制按钮 -->
+            <div class="controls">
+                <button class="control-btn secondary" id="muteBtn" onclick="toggleMute()">
+                    🔇
+                </button>
+                <button class="control-btn primary" id="callBtn" onclick="toggleCall()">
+                    📹
+                </button>
+                <button class="control-btn secondary" id="cameraBtn" onclick="toggleCamera()">
+                    📷
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ 状态管理 ============
+        const state = {
+            isCallActive: false,
+            isListening: false,
+            isSpeaking: false,
+            isMuted: false,
+            isCameraOff: false,
+            selectedVoice: 'female',
+            recognition: null,
+            synthesis: window.speechSynthesis,
+            currentUtterance: null
+        };
+
+        // ============ DOM元素 ============
+        const panda = document.getElementById('panda');
+        const subtitle = document.getElementById('subtitle');
+        const statusText = document.getElementById('statusText');
+        const statusSubtext = document.getElementById('statusSubtext');
+        const callBtn = document.getElementById('callBtn');
+        const muteBtn = document.getElementById('muteBtn');
+        const cameraBtn = document.getElementById('cameraBtn');
+        const volumeIndicator = document.getElementById('volumeIndicator');
+
+        // ============ 自动眨眼 ============
+        function autoBlink() {
+            setInterval(() => {
+                if (!state.isSpeaking) {
+                    panda.classList.add('blinking');
+                    setTimeout(() => {
+                        panda.classList.remove('blinking');
+                    }, 150);
+                }
+            }, 3000 + Math.random() * 2000);
+        }
+        autoBlink();
+
+        // ============ 眼睛跟随鼠标 ============
+        document.addEventListener('mousemove', (e) => {
+            const pupils = document.querySelectorAll('.panda-pupil');
+            const rect = panda.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            
+            const deltaX = (e.clientX - centerX) / 50;
+            const deltaY = (e.clientY - centerY) / 50;
+            
+            const maxMove = 5;
+            const moveX = Math.max(-maxMove, Math.min(maxMove, deltaX));
+            const moveY = Math.max(-maxMove, Math.min(maxMove, deltaY));
+            
+            pupils.forEach(pupil => {
+                pupil.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            });
+        });
+
+        // ============ 语音识别 ============
+        function initSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            if (!SpeechRecognition) {
+                console.warn('浏览器不支持语音识别');
+                return null;
+            }
+
+            const recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'zh-CN';
+
+            recognition.onresult = (event) => {
+                let finalTranscript = '';
+                
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    }
+                }
+
+                if (finalTranscript && !state.isMuted) {
+                    processUserInput(finalTranscript);
+                }
+            };
+
+            recognition.onstart = () => {
+                state.isListening = true;
+                updateUI();
+            };
+
+            recognition.onend = () => {
+                state.isListening = false;
+                updateUI();
+                
+                if (state.isCallActive && !state.isSpeaking) {
+                    recognition.start();
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.error('语音识别错误:', event.error);
+                if (state.isCallActive && event.error !== 'no-speech') {
+                    setTimeout(() => {
+                        if (state.isCallActive && recognition) {
+                            recognition.start();
+                        }
+                    }, 1000);
+                }
+            };
+
+            return recognition;
+        }
+
+        // ============ 语音合成 ============
+        function speak(text) {
+            if (state.isMuted) return;
+            
+            if (state.currentUtterance) {
+                state.synthesis.cancel();
+            }
+
+            if (state.recognition && state.isListening) {
+                state.recognition.stop();
+            }
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            const voices = state.synthesis.getVoices();
+            utterance.voice = voices.find(v => v.lang.includes('zh')) || voices[0];
+            utterance.rate = 1.0;
+
+            utterance.onstart = () => {
+                state.isSpeaking = true;
+                showSubtitle(text);
+                updateUI();
+            };
+
+            utterance.onend = () => {
+                state.isSpeaking = false;
+                state.currentUtterance = null;
+                hideSubtitle();
+                updateUI();
+                
+                if (state.isCallActive && state.recognition) {
+                    state.recognition.start();
+                }
+            };
+
+            state.currentUtterance = utterance;
+            state.synthesis.speak(utterance);
+        }
+
+        // ============ AI处理 ============
+        async function processUserInput(text) {
+            // 表情变化 - 思考
+            panda.classList.add('thinking');
+            statusText.textContent = '正在思考...';
+            
+            // 模拟AI响应
+            const responses = [
+                '你好呀！今天有什么想聊的吗？',
+                '嗯，我明白了！',
+                '这个话题很有意思呢！',
+                '让我想想...你说得有道理。',
+                '好的，我记住了！',
+                '这个问题问得好！'
+            ];
+            
+            const response = responses[Math.floor(Math.random() * responses.length)];
+            
+            setTimeout(() => {
+                panda.classList.remove('thinking');
+                panda.classList.add('happy');
+                speak(response);
+                
+                setTimeout(() => {
+                    panda.classList.remove('happy');
+                }, 2000);
+            }, 1000);
+        }
+
+        // ============ 字幕 ============
+        function showSubtitle(text) {
+            subtitle.textContent = text;
+            subtitle.classList.add('visible');
+        }
+
+        function hideSubtitle() {
+            subtitle.classList.remove('visible');
+        }
+
+        // ============ 音量指示器动画 ============
+        function animateVolume() {
+            const bars = volumeIndicator.querySelectorAll('.volume-bar');
+            bars.forEach(bar => {
+                const height = 10 + Math.random() * 20;
+                bar.style.height = height + 'px';
+            });
+        }
+        let volumeInterval = null;
+
+        // ============ UI更新 ============
+        function updateUI() {
+            if (state.isSpeaking) {
+                panda.classList.add('speaking');
+                statusText.textContent = 'TOKI 正在说话';
+                statusSubtext.textContent = '点击屏幕可打断';
+            } else if (state.isListening) {
+                panda.classList.remove('speaking');
+                statusText.textContent = '正在聆听';
+                statusSubtext.textContent = '请说话...';
+                volumeIndicator.classList.add('active');
+                if (!volumeInterval) {
+                    volumeInterval = setInterval(animateVolume, 100);
+                }
+            } else {
+                panda.classList.remove('speaking');
+                volumeIndicator.classList.remove('active');
+                if (volumeInterval) {
+                    clearInterval(volumeInterval);
+                    volumeInterval = null;
+                }
+            }
+            
+            // 按钮状态
+            if (state.isCallActive) {
+                callBtn.innerHTML = '📞';
+                callBtn.classList.add('danger');
+                callBtn.classList.remove('primary');
+            } else {
+                callBtn.innerHTML = '📹';
+                callBtn.classList.add('primary');
+                callBtn.classList.remove('danger');
+            }
+            
+            muteBtn.innerHTML = state.isMuted ? '🔇' : '🔊';
+            cameraBtn.innerHTML = state.isCameraOff ? '🚫' : '📷';
+        }
+
+        // ============ 控制函数 ============
+        function toggleCall() {
+            if (state.isCallActive) {
+                endCall();
+            } else {
+                startCall();
+            }
+        }
+
+        function startCall() {
+            state.isCallActive = true;
+            
+            if (!state.recognition) {
+                state.recognition = initSpeechRecognition();
+            }
+            
+            if (state.recognition) {
+                state.recognition.start();
+            }
+            
+            // 欢迎动画
+            panda.classList.add('happy');
+            setTimeout(() => {
+                panda.classList.remove('happy');
+                speak('你好，我是TOKI！很高兴见到你，今天想聊些什么呢？');
+            }, 500);
+            
+            updateUI();
+        }
+
+        function endCall() {
+            state.isCallActive = false;
+            
+            if (state.recognition) {
+                state.recognition.stop();
+            }
+            
+            if (state.synthesis) {
+                state.synthesis.cancel();
+            }
+            
+            state.isSpeaking = false;
+            state.isListening = false;
+            
+            statusText.textContent = '点击开始视频通话';
+            statusSubtext.textContent = '和熊猫TOKI面对面聊天';
+            
+            updateUI();
+        }
+
+        function toggleMute() {
+            state.isMuted = !state.isMuted;
+            
+            if (state.isMuted && state.isSpeaking) {
+                state.synthesis.cancel();
+            }
+            
+            updateUI();
+        }
+
+        function toggleCamera() {
+            state.isCameraOff = !state.isCameraOff;
+            updateUI();
+        }
+
+        // ============ 点击打断 ============
+        document.querySelector('.panda-container').addEventListener('click', () => {
+            if (state.isSpeaking) {
+                state.synthesis.cancel();
+                state.isSpeaking = false;
+                hideSubtitle();
+                updateUI();
+                
+                if (state.isCallActive && state.recognition) {
+                    state.recognition.start();
+                }
+            }
+        });
+
+        // ============ 初始化 ============
+        window.onload = () => {
+            if (state.synthesis) {
+                state.synthesis.onvoiceschanged = () => {
+                    console.log('语音列表已加载');
+                };
+            }
+            updateUI();
+        };
+    </script>
+</body>
+</html>

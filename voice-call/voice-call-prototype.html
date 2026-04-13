@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TOKI 语音通话原型</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 400px;
+            background: white;
+            border-radius: 24px;
+            padding: 40px 30px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        /* 熊猫头像 */
+        .panda-avatar {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 30px;
+            background: #f5f5f5;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 80px;
+            position: relative;
+            transition: all 0.3s;
+        }
+        .panda-avatar.speaking {
+            animation: speaking 0.3s infinite;
+        }
+        .panda-avatar.listening {
+            animation: listening 1s infinite;
+        }
+        @keyframes speaking {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        @keyframes listening {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4); }
+            50% { box-shadow: 0 0 0 20px rgba(102, 126, 234, 0); }
+        }
+        
+        /* 状态显示 */
+        .status {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        .status-text {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 30px;
+            min-height: 20px;
+        }
+        
+        /* 识别文字显示 */
+        .transcript {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            min-height: 60px;
+            text-align: left;
+            font-size: 14px;
+            color: #333;
+            line-height: 1.6;
+        }
+        .transcript-empty {
+            color: #999;
+            font-style: italic;
+        }
+        
+        /* 通话按钮 */
+        .call-button {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: none;
+            font-size: 32px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 0 10px;
+        }
+        .call-button.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .call-button.primary:hover {
+            transform: scale(1.1);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        .call-button.danger {
+            background: #ff4757;
+            color: white;
+        }
+        .call-button.danger:hover {
+            transform: scale(1.1);
+            box-shadow: 0 10px 30px rgba(255, 71, 87, 0.4);
+        }
+        .call-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        /* 音色选择 */
+        .voice-selector {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        .voice-selector label {
+            display: block;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .voice-options {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .voice-option {
+            padding: 8px 16px;
+            border: 2px solid #eee;
+            border-radius: 20px;
+            background: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .voice-option.active {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        /* 音量波形 */
+        .waveform {
+            display: flex;
+            justify-content: center;
+            gap: 3px;
+            height: 30px;
+            margin-bottom: 20px;
+        }
+        .wave-bar {
+            width: 4px;
+            background: #667eea;
+            border-radius: 2px;
+            transition: height 0.1s;
+        }
+        
+        /* 提示 */
+        .hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 熊猫头像 -->
+        <div class="panda-avatar" id="pandaAvatar">
+            🐼
+        </div>
+        
+        <!-- 状态显示 -->
+        <div class="status" id="status">准备就绪</div>
+        <div class="status-text" id="statusText">点击麦克风开始通话</div>
+        
+        <!-- 音量波形 -->
+        <div class="waveform" id="waveform">
+            <div class="wave-bar" style="height: 10px;"></div>
+            <div class="wave-bar" style="height: 15px;"></div>
+            <div class="wave-bar" style="height: 20px;"></div>
+            <div class="wave-bar" style="height: 25px;"></div>
+            <div class="wave-bar" style="height: 20px;"></div>
+            <div class="wave-bar" style="height: 15px;"></div>
+            <div class="wave-bar" style="height: 10px;"></div>
+        </div>
+        
+        <!-- 识别文字 -->
+        <div class="transcript" id="transcript">
+            <span class="transcript-empty">识别的文字会显示在这里...</span>
+        </div>
+        
+        <!-- 控制按钮 -->
+        <div class="controls">
+            <button class="call-button primary" id="micButton" onclick="toggleCall()">
+                🎤
+            </button>
+        </div>
+        
+        <!-- 音色选择 -->
+        <div class="voice-selector">
+            <label>选择音色</label>
+            <div class="voice-options">
+                <button class="voice-option active" data-voice="female" onclick="selectVoice('female')">
+                    👩 温柔女声
+                </button>
+                <button class="voice-option" data-voice="male" onclick="selectVoice('male')">
+                    👨 沉稳男声
+                </button>
+                <button class="voice-option" data-voice="child" onclick="selectVoice('child')">
+                    👧 儿童音色
+                </button>
+            </div>
+        </div>
+        
+        <!-- 提示 -->
+        <div class="hint">
+            💡 提示：说话时会实时识别，TOKI会实时回复<br>
+            支持随时打断，就像打电话一样
+        </div>
+    </div>
+
+    <script>
+        // ============ 状态管理 ============
+        const state = {
+            isCallActive: false,
+            isListening: false,
+            isSpeaking: false,
+            selectedVoice: 'female',
+            recognition: null,
+            synthesis: window.speechSynthesis,
+            currentUtterance: null,
+            transcript: '',
+            aiResponse: ''
+        };
+
+        // ============ DOM元素 ============
+        const pandaAvatar = document.getElementById('pandaAvatar');
+        const status = document.getElementById('status');
+        const statusText = document.getElementById('statusText');
+        const transcriptEl = document.getElementById('transcript');
+        const micButton = document.getElementById('micButton');
+        const waveform = document.getElementById('waveform');
+
+        // ============ 语音识别初始化 ============
+        function initSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            if (!SpeechRecognition) {
+                alert('您的浏览器不支持语音识别，请使用Chrome浏览器');
+                return null;
+            }
+
+            const recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'zh-CN';
+
+            // 识别结果
+            recognition.onresult = (event) => {
+                let finalTranscript = '';
+                let interimTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript;
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+
+                // 显示识别结果
+                if (finalTranscript) {
+                    state.transcript += finalTranscript;
+                    updateTranscript();
+                    
+                    // 发送给AI处理
+                    processUserInput(finalTranscript);
+                } else if (interimTranscript) {
+                    transcriptEl.innerHTML = state.transcript + 
+                        `<span style="color: #999;">${interimTranscript}</span>`;
+                }
+            };
+
+            // 开始识别
+            recognition.onstart = () => {
+                state.isListening = true;
+                updateUI();
+            };
+
+            // 结束识别
+            recognition.onend = () => {
+                state.isListening = false;
+                updateUI();
+                
+                // 如果通话还在进行，自动重启识别
+                if (state.isCallActive && !state.isSpeaking) {
+                    recognition.start();
+                }
+            };
+
+            // 错误处理
+            recognition.onerror = (event) => {
+                console.error('语音识别错误:', event.error);
+                if (event.error === 'no-speech') {
+                    // 没有检测到语音，继续监听
+                    if (state.isCallActive) {
+                        recognition.start();
+                    }
+                }
+            };
+
+            return recognition;
+        }
+
+        // ============ 语音合成 ============
+        function speak(text) {
+            // 如果正在说话，先停止
+            if (state.currentUtterance) {
+                state.synthesis.cancel();
+            }
+
+            // 停止语音识别（避免干扰）
+            if (state.recognition && state.isListening) {
+                state.recognition.stop();
+            }
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            
+            // 设置音色
+            const voices = state.synthesis.getVoices();
+            const voiceMap = {
+                'female': voices.find(v => v.lang.includes('zh') && v.name.includes('Female')) || voices[0],
+                'male': voices.find(v => v.lang.includes('zh') && v.name.includes('Male')) || voices[0],
+                'child': voices[0]
+            };
+            utterance.voice = voiceMap[state.selectedVoice] || voices[0];
+            
+            utterance.rate = 1.0;
+            utterance.pitch = state.selectedVoice === 'child' ? 1.3 : 1.0;
+
+            utterance.onstart = () => {
+                state.isSpeaking = true;
+                updateUI();
+            };
+
+            utterance.onend = () => {
+                state.isSpeaking = false;
+                state.currentUtterance = null;
+                updateUI();
+                
+                // 恢复语音识别
+                if (state.isCallActive && state.recognition) {
+                    state.recognition.start();
+                }
+            };
+
+            state.currentUtterance = utterance;
+            state.synthesis.speak(utterance);
+        }
+
+        // ============ 打断机制 ============
+        function interrupt() {
+            if (state.isSpeaking) {
+                state.synthesis.cancel();
+                state.isSpeaking = false;
+                state.currentUtterance = null;
+                updateUI();
+                
+                // 立即恢复识别
+                if (state.isCallActive && state.recognition) {
+                    state.recognition.start();
+                }
+            }
+        }
+
+        // ============ AI处理 ============
+        async function processUserInput(text) {
+            // 简单的模拟AI回复（实际应调用API）
+            const responses = [
+                '好的，我明白了。',
+                '这个想法很有趣！',
+                '让我想想...',
+                '没问题，我可以帮你。',
+                '还有什么想说的吗？',
+                '这个话题很有意思呢！',
+                '我理解你的意思了。',
+                '你说得对！'
+            ];
+            
+            const response = responses[Math.floor(Math.random() * responses.length)];
+            
+            // 模拟延迟
+            setTimeout(() => {
+                speak(response);
+            }, 500);
+        }
+
+        // ============ UI更新 ============
+        function updateUI() {
+            // 头像动画
+            pandaAvatar.classList.remove('speaking', 'listening');
+            if (state.isSpeaking) {
+                pandaAvatar.classList.add('speaking');
+                status.textContent = 'TOKI 正在说话';
+                statusText.textContent = '点击可打断';
+            } else if (state.isListening) {
+                pandaAvatar.classList.add('listening');
+                status.textContent = '正在聆听';
+                statusText.textContent = '请说话...';
+            } else {
+                status.textContent = '准备就绪';
+                statusText.textContent = '点击麦克风开始通话';
+            }
+            
+            // 按钮状态
+            if (state.isCallActive) {
+                micButton.innerHTML = '📞';
+                micButton.classList.add('danger');
+                micButton.classList.remove('primary');
+            } else {
+                micButton.innerHTML = '🎤';
+                micButton.classList.add('primary');
+                micButton.classList.remove('danger');
+            }
+        }
+
+        function updateTranscript() {
+            if (state.transcript) {
+                transcriptEl.innerHTML = state.transcript;
+                transcriptEl.classList.remove('transcript-empty');
+            }
+        }
+
+        // ============ 音量波形动画 ============
+        function animateWaveform() {
+            const bars = waveform.querySelectorAll('.wave-bar');
+            bars.forEach(bar => {
+                const height = 10 + Math.random() * 20;
+                bar.style.height = height + 'px';
+            });
+        }
+        setInterval(animateWaveform, 100);
+
+        // ============ 音色选择 ============
+        function selectVoice(voice) {
+            state.selectedVoice = voice;
+            
+            document.querySelectorAll('.voice-option').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.querySelector(`[data-voice="${voice}"]`).classList.add('active');
+        }
+
+        // ============ 通话控制 ============
+        function toggleCall() {
+            if (state.isCallActive) {
+                endCall();
+            } else {
+                startCall();
+            }
+        }
+
+        function startCall() {
+            state.isCallActive = true;
+            state.transcript = '';
+            
+            // 初始化语音识别
+            if (!state.recognition) {
+                state.recognition = initSpeechRecognition();
+            }
+            
+            // 开始识别
+            if (state.recognition) {
+                state.recognition.start();
+            }
+            
+            // 欢迎语
+            speak('你好，我是 TOKI，有什么可以帮你的吗？');
+            
+            updateUI();
+        }
+
+        function endCall() {
+            state.isCallActive = false;
+            
+            // 停止语音识别
+            if (state.recognition) {
+                state.recognition.stop();
+            }
+            
+            // 停止语音合成
+            if (state.synthesis) {
+                state.synthesis.cancel();
+            }
+            
+            state.isSpeaking = false;
+            state.isListening = false;
+            
+            updateUI();
+        }
+
+        // ============ 初始化 ============
+        window.onload = () => {
+            // 加载语音列表
+            if (state.synthesis) {
+                state.synthesis.onvoiceschanged = () => {
+                    console.log('语音列表已加载');
+                };
+            }
+            
+            updateUI();
+        };
+    </script>
+</body>
+</html>

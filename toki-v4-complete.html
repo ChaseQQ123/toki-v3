@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TOKI V4.0 - AI Panda Assistant</title>
+    <meta name="description" content="TOKI - 来自四川的熊猫AI助手，支持语音通话、视频通话、智能对话">
+    <meta name="theme-color" content="#667eea">
+    <link rel="manifest" href="../manifest.json">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐼</text></svg>">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+        }
+        .app {
+            width: 100%;
+            max-width: 420px;
+            height: 100vh;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* 头部 */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header-left { display: flex; align-items: center; gap: 10px; }
+        .logo { font-size: 28px; }
+        .title { font-size: 20px; font-weight: bold; }
+        .version { background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 10px; font-size: 11px; }
+        .header-btns { display: flex; gap: 15px; }
+        .header-btn { font-size: 20px; cursor: pointer; opacity: 0.8; }
+        
+        /* 主内容区 */
+        .main { flex: 1; display: flex; flex-direction: column; }
+        
+        /* 功能导航 */
+        .feature-nav {
+            display: flex;
+            overflow-x: auto;
+            padding: 15px 10px;
+            gap: 10px;
+            background: white;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .feature-nav::-webkit-scrollbar { display: none; }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 20px;
+            background: #f8f9fa;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 80px;
+        }
+        .nav-item:hover, .nav-item.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: translateY(-2px);
+        }
+        .nav-icon { font-size: 28px; margin-bottom: 5px; }
+        .nav-label { font-size: 12px; white-space: nowrap; }
+        
+        /* 内容区 */
+        .content { flex: 1; overflow-y: auto; padding: 20px; }
+        .tab { display: none; }
+        .tab.active { display: block; }
+        
+        /* 对话区 */
+        .chat-area { padding: 0; }
+        .message { margin-bottom: 20px; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .message.bot { display: flex; gap: 12px; }
+        .bot-avatar {
+            width: 40px; height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; flex-shrink: 0;
+        }
+        .bot-content { flex: 1; }
+        .bot-name { font-size: 12px; color: #999; margin-bottom: 5px; }
+        .bot-text {
+            background: #f8f9fa;
+            padding: 12px 16px;
+            border-radius: 16px 16px 16px 4px;
+            font-size: 15px; line-height: 1.6; color: #333;
+        }
+        .message.user { display: flex; justify-content: flex-end; }
+        .user-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 16px 16px 4px 16px;
+            font-size: 15px; line-height: 1.6;
+            max-width: 80%;
+        }
+        
+        /* 熊猫形象 */
+        .panda-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            text-align: center;
+        }
+        .panda-face {
+            width: 200px; height: 200px;
+            background: white;
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .panda-ear {
+            width: 50px; height: 50px;
+            background: #1a1a1a;
+            border-radius: 50%;
+            position: absolute;
+            top: -10px;
+        }
+        .panda-ear.left { left: 10px; }
+        .panda-ear.right { right: 10px; }
+        .panda-eye-patch {
+            width: 60px; height: 65px;
+            background: #1a1a1a;
+            border-radius: 50%;
+            position: absolute;
+            top: 50px;
+        }
+        .panda-eye-patch.left { left: 20px; transform: rotate(5deg); }
+        .panda-eye-patch.right { right: 20px; transform: rotate(-5deg); }
+        .panda-eye {
+            width: 25px; height: 25px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 65px;
+        }
+        .panda-eye.left { left: 38px; }
+        .panda-eye.right { right: 38px; }
+        .panda-pupil {
+            width: 12px; height: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            position: absolute;
+            top: 70px;
+        }
+        .panda-pupil.left { left: 45px; }
+        .panda-pupil.right { right: 45px; }
+        .panda-nose {
+            width: 20px; height: 15px;
+            background: #1a1a1a;
+            border-radius: 50%;
+            position: absolute;
+            top: 110px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .panda-mouth {
+            width: 30px; height: 15px;
+            position: absolute;
+            top: 130px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .panda-mouth::before, .panda-mouth::after {
+            content: '';
+            width: 15px; height: 8px;
+            border: 2px solid #1a1a1a;
+            border-top: none;
+            border-radius: 0 0 50% 50%;
+            position: absolute;
+        }
+        .panda-mouth::before { left: 0; }
+        .panda-mouth::after { right: 0; }
+        
+        .panda.speaking .panda-mouth { animation: speaking 0.15s infinite; }
+        @keyframes speaking {
+            0%, 100% { height: 15px; }
+            50% { height: 25px; }
+        }
+        
+        .call-status { font-size: 18px; color: #333; margin-bottom: 10px; }
+        .call-hint { font-size: 14px; color: #666; }
+        
+        /* 输入区 */
+        .input-area {
+            background: white;
+            padding: 15px 20px;
+            border-top: 1px solid #f0f0f0;
+        }
+        .input-tools { display: flex; gap: 10px; margin-bottom: 12px; }
+        .tool-btn {
+            display: flex; align-items: center; gap: 6px;
+            padding: 10px 16px;
+            background: #f8f9fa;
+            border: none;
+            border-radius: 20px;
+            font-size: 13px;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .tool-btn:hover { background: #667eea; color: white; }
+        .input-wrapper { display: flex; gap: 10px; align-items: flex-end; }
+        .input-box {
+            flex: 1;
+            background: #f8f9fa;
+            border-radius: 24px;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+        }
+        .input-box input {
+            flex: 1;
+            border: none;
+            background: none;
+            font-size: 15px;
+            outline: none;
+        }
+        .send-btn {
+            width: 48px; height: 48px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .send-btn:hover { transform: scale(1.1); }
+        
+        /* 底部导航 */
+        .bottom-nav {
+            background: white;
+            border-top: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            padding-bottom: calc(10px + env(safe-area-inset-bottom));
+        }
+        .nav-item-bottom {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            padding: 5px 20px;
+            transition: all 0.3s;
+        }
+        .nav-item-bottom.active { color: #667eea; }
+        .nav-icon-bottom { font-size: 24px; }
+        .nav-label-bottom { font-size: 11px; }
+        
+        /* 模态框 */
+        .modal {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .modal.open { opacity: 1; pointer-events: auto; }
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 360px;
+            text-align: center;
+        }
+        .modal-title { font-size: 20px; font-weight: bold; margin-bottom: 15px; }
+        .modal-text { color: #666; margin-bottom: 20px; }
+        .modal-btns { display: flex; gap: 10px; }
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .modal-btn.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- 头部 -->
+        <div class="header">
+            <div class="header-left">
+                <span class="logo">🐼</span>
+                <span class="title">TOKI</span>
+                <span class="version">V4.0</span>
+            </div>
+            <div class="header-btns">
+                <span class="header-btn" onclick="openSettings()">⚙️</span>
+            </div>
+        </div>
+        
+        <!-- 主内容 -->
+        <div class="main">
+            <!-- 功能导航 -->
+            <div class="feature-nav">
+                <div class="nav-item active" onclick="switchFeature('chat')">
+                    <span class="nav-icon">💬</span>
+                    <span class="nav-label">对话</span>
+                </div>
+                <div class="nav-item" onclick="switchFeature('voice')">
+                    <span class="nav-icon">🎤</span>
+                    <span class="nav-label">语音</span>
+                </div>
+                <div class="nav-item" onclick="switchFeature('video')">
+                    <span class="nav-icon">📹</span>
+                    <span class="nav-label">视频</span>
+                </div>
+                <div class="nav-item" onclick="switchFeature('file')">
+                    <span class="nav-icon">📁</span>
+                    <span class="nav-label">文件</span>
+                </div>
+                <div class="nav-item" onclick="switchFeature('agent')">
+                    <span class="nav-icon">🤖</span>
+                    <span class="nav-label">智能体</span>
+                </div>
+            </div>
+            
+            <!-- 内容区 -->
+            <div class="content">
+                <!-- 对话Tab -->
+                <div class="tab active" id="chatTab">
+                    <div class="chat-area" id="chatArea">
+                        <div class="message bot">
+                            <div class="bot-avatar">🐼</div>
+                            <div class="bot-content">
+                                <div class="bot-name">TOKI</div>
+                                <div class="bot-text">
+                                    你好！我是 TOKI 🐼<br><br>
+                                    我可以帮你：<br>
+                                    • 💬 智能对话<br>
+                                    • 🎤 语音通话<br>
+                                    • 📹 视频通话<br>
+                                    • 📁 文件处理<br>
+                                    • 🤖 智能体助手<br><br>
+                                    有什么可以帮你的吗？
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 语音Tab -->
+                <div class="tab" id="voiceTab">
+                    <div class="panda-display">
+                        <div class="panda-face" id="pandaFace">
+                            <div class="panda-ear left"></div>
+                            <div class="panda-ear right"></div>
+                            <div class="panda-eye-patch left"></div>
+                            <div class="panda-eye-patch right"></div>
+                            <div class="panda-eye left"></div>
+                            <div class="panda-eye right"></div>
+                            <div class="panda-pupil left"></div>
+                            <div class="panda-pupil right"></div>
+                            <div class="panda-nose"></div>
+                            <div class="panda-mouth"></div>
+                        </div>
+                        <div class="call-status" id="voiceStatus">点击开始语音通话</div>
+                        <div class="call-hint">和熊猫TOKI打电话</div>
+                    </div>
+                </div>
+                
+                <!-- 视频Tab -->
+                <div class="tab" id="videoTab">
+                    <div class="panda-display">
+                        <div class="panda-face" id="pandaFace2">
+                            <div class="panda-ear left"></div>
+                            <div class="panda-ear right"></div>
+                            <div class="panda-eye-patch left"></div>
+                            <div class="panda-eye-patch right"></div>
+                            <div class="panda-eye left"></div>
+                            <div class="panda-eye right"></div>
+                            <div class="panda-pupil left"></div>
+                            <div class="panda-pupil right"></div>
+                            <div class="panda-nose"></div>
+                            <div class="panda-mouth"></div>
+                        </div>
+                        <div class="call-status">点击开始视频通话</div>
+                        <div class="call-hint">和熊猫TOKI面对面聊天</div>
+                    </div>
+                </div>
+                
+                <!-- 文件Tab -->
+                <div class="tab" id="fileTab">
+                    <div style="text-align: center; padding: 60px 20px;">
+                        <div style="font-size: 64px; margin-bottom: 20px;">📁</div>
+                        <div style="font-size: 18px; color: #333; margin-bottom: 10px;">文件处理</div>
+                        <div style="font-size: 14px; color: #666;">
+                            支持PDF解析、OCR识别、智能总结
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 智能体Tab -->
+                <div class="tab" id="agentTab">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 10px;">
+                        <div class="agent-card" onclick="selectAgent('analyst')">
+                            <div style="font-size: 32px; margin-bottom: 10px;">📊</div>
+                            <div style="font-weight: 500;">数据分析师</div>
+                        </div>
+                        <div class="agent-card" onclick="selectAgent('business')">
+                            <div style="font-size: 32px; margin-bottom: 10px;">💼</div>
+                            <div style="font-weight: 500;">商务助手</div>
+                        </div>
+                        <div class="agent-card" onclick="selectAgent('tutor')">
+                            <div style="font-size: 32px; margin-bottom: 10px;">📚</div>
+                            <div style="font-weight: 500;">学习导师</div>
+                        </div>
+                        <div class="agent-card" onclick="selectAgent('coder')">
+                            <div style="font-size: 32px; margin-bottom: 10px;">💻</div>
+                            <div style="font-weight: 500;">编程助手</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 输入区 -->
+            <div class="input-area">
+                <div class="input-tools">
+                    <button class="tool-btn" onclick="startVoiceCall()">🎤 语音</button>
+                    <button class="tool-btn" onclick="startVideoCall()">📹 视频</button>
+                    <button class="tool-btn" onclick="uploadFile()">📁 文件</button>
+                </div>
+                <div class="input-wrapper">
+                    <div class="input-box">
+                        <input type="text" id="inputText" placeholder="输入消息..." onkeydown="handleKeydown(event)">
+                    </div>
+                    <button class="send-btn" onclick="sendMessage()">➤</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 底部导航 -->
+        <div class="bottom-nav">
+            <div class="nav-item-bottom active" onclick="switchBottomTab('chat')">
+                <span class="nav-icon-bottom">💬</span>
+                <span class="nav-label-bottom">对话</span>
+            </div>
+            <div class="nav-item-bottom" onclick="switchBottomTab('discover')">
+                <span class="nav-icon-bottom">🔍</span>
+                <span class="nav-label-bottom">发现</span>
+            </div>
+            <div class="nav-item-bottom" onclick="switchBottomTab('create')">
+                <span class="nav-icon-bottom">✨</span>
+                <span class="nav-label-bottom">创作</span>
+            </div>
+            <div class="nav-item-bottom" onclick="switchBottomTab('profile')">
+                <span class="nav-icon-bottom">👤</span>
+                <span class="nav-label-bottom">我的</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 设置模态框 -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-title">⚙️ 设置</div>
+            <div class="modal-text">
+                TOKI V4.0<br>
+                Powered by TOKIClaw
+            </div>
+            <div class="modal-btns">
+                <button class="modal-btn" onclick="closeSettings()">关闭</button>
+                <button class="modal-btn primary" onclick="saveSettings()">保存</button>
+            </div>
+        </div>
+    </div>
+    
+    <style>
+        .agent-card {
+            background: #f8f9fa;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .agent-card:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: translateY(-2px);
+        }
+    </style>
+    
+    <script>
+        // ============ 状态管理 ============
+        const state = {
+            currentTab: 'chat',
+            currentFeature: 'chat',
+            messages: [],
+            isCallActive: false
+        };
+        
+        // ============ 功能切换 ============
+        function switchFeature(feature) {
+            state.currentFeature = feature;
+            
+            document.querySelectorAll('.feature-nav .nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+            
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.getElementById(feature + 'Tab').classList.add('active');
+        }
+        
+        function switchBottomTab(tab) {
+            document.querySelectorAll('.nav-item-bottom').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+        }
+        
+        // ============ 消息处理 ============
+        function sendMessage() {
+            const input = document.getElementById('inputText');
+            const text = input.value.trim();
+            if (!text) return;
+            
+            addMessage('user', text);
+            input.value = '';
+            
+            setTimeout(() => {
+                const responses = [
+                    '好的，我明白了！',
+                    '这个很有意思，让我想想...',
+                    '我可以帮你处理这个！',
+                    '收到，正在处理中...'
+                ];
+                addMessage('bot', responses[Math.floor(Math.random() * responses.length)]);
+            }, 800);
+        }
+        
+        function addMessage(type, text) {
+            const chatArea = document.getElementById('chatArea');
+            const msg = document.createElement('div');
+            msg.className = `message ${type}`;
+            
+            if (type === 'user') {
+                msg.innerHTML = `<div class="user-text">${text}</div>`;
+            } else {
+                msg.innerHTML = `
+                    <div class="bot-avatar">🐼</div>
+                    <div class="bot-content">
+                        <div class="bot-name">TOKI</div>
+                        <div class="bot-text">${text}</div>
+                    </div>
+                `;
+            }
+            
+            chatArea.appendChild(msg);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+        
+        function handleKeydown(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        // ============ 通话功能 ============
+        function startVoiceCall() {
+            switchFeature('voice');
+            setTimeout(() => {
+                alert('语音通话功能需要麦克风权限');
+            }, 300);
+        }
+        
+        function startVideoCall() {
+            switchFeature('video');
+            setTimeout(() => {
+                alert('视频通话功能需要摄像头权限');
+            }, 300);
+        }
+        
+        function uploadFile() {
+            switchFeature('file');
+            setTimeout(() => {
+                alert('文件上传功能演示');
+            }, 300);
+        }
+        
+        // ============ 智能体 ============
+        function selectAgent(agent) {
+            const agents = {
+                'analyst': '数据分析师',
+                'business': '商务助手',
+                'tutor': '学习导师',
+                'coder': '编程助手'
+            };
+            addMessage('bot', `已切换到 ${agents[agent]} 模式，有什么可以帮你的？`);
+            switchFeature('chat');
+        }
+        
+        // ============ 设置 ============
+        function openSettings() {
+            document.getElementById('settingsModal').classList.add('open');
+        }
+        
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.remove('open');
+        }
+        
+        function saveSettings() {
+            closeSettings();
+            addMessage('bot', '设置已保存！');
+        }
+        
+        // ============ 初始化 ============
+        console.log('🐼 TOKI V4.0 已加载');
+        console.log('🦞 Powered by TOKIClaw');
+    </script>
+</body>
+</html>
