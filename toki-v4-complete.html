@@ -3,248 +3,255 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TOKI V4.0 - AI Panda Assistant</title>
+    <title>TOKI V4.0 - AI Panda</title>
     <meta name="theme-color" content="#667eea">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; min-height: 100vh; display: flex; justify-content: center; }
-        .app { width: 100%; max-width: 420px; height: 100vh; background: white; display: flex; flex-direction: column; overflow: hidden; }
         
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
-        .header-left { display: flex; align-items: center; gap: 8px; }
-        .logo { font-size: 26px; }
-        .title { font-size: 18px; font-weight: bold; }
-        .version { background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 8px; font-size: 10px; }
+        /* 手机容器 - 豆包风格 */
+        .phone { width: 100%; max-width: 420px; height: 100vh; background: white; display: flex; flex-direction: column; position: relative; overflow: hidden; }
         
-        .model-bar { background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); padding: 8px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 11px; border-bottom: 1px solid #b1dfbb; }
-        .model-badge { display: flex; align-items: center; gap: 6px; }
-        .model-tag { padding: 3px 10px; border-radius: 10px; font-size: 10px; font-weight: 500; background: white; }
+        /* 顶部栏 - 简洁白底 */
+        .header { background: white; padding: 12px 16px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
+        .header-left { display: flex; align-items: center; gap: 10px; }
+        .panda-icon { width: 38px; height: 38px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+        .header-title { font-size: 18px; font-weight: 600; color: #333; }
+        .model-badge { font-size: 10px; background: #e8f5e9; color: #2e7d32; padding: 3px 8px; border-radius: 10px; margin-left: 8px; }
+        .header-btn { font-size: 20px; cursor: pointer; opacity: 0.6; padding: 5px; }
+        .header-btn:hover { opacity: 1; }
         
-        .feature-nav { display: flex; overflow-x: auto; padding: 10px; gap: 8px; background: white; }
-        .feature-nav::-webkit-scrollbar { display: none; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; padding: 10px 14px; background: #f8f9fa; border-radius: 12px; cursor: pointer; transition: all 0.3s; min-width: 60px; }
-        .nav-item:hover, .nav-item.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-        .nav-icon { font-size: 22px; margin-bottom: 4px; }
-        .nav-label { font-size: 10px; }
+        /* 左滑历史面板 */
+        .history-panel { position: absolute; top: 0; left: -280px; width: 280px; height: 100%; background: white; z-index: 20; transition: left 0.3s; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
+        .history-panel.open { left: 0; }
+        .history-header { padding: 16px 20px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
+        .history-title { font-size: 16px; font-weight: 600; }
+        .history-close { font-size: 24px; cursor: pointer; color: #999; }
+        .history-list { padding: 10px; overflow-y: auto; height: calc(100% - 56px); }
+        .history-item { padding: 14px; border-radius: 10px; margin-bottom: 6px; cursor: pointer; transition: background 0.3s; }
+        .history-item:hover { background: #f5f5f5; }
+        .history-item.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .history-item-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+        .history-item-preview { font-size: 11px; opacity: 0.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        .content { flex: 1; overflow-y: auto; padding: 15px; }
-        .tab { display: none; }
-        .tab.active { display: block; }
+        .overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); z-index: 15; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+        .overlay.visible { opacity: 1; pointer-events: auto; }
         
-        .chat-area { padding: 0; }
-        .message { margin-bottom: 12px; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-        .message.bot { display: flex; gap: 8px; }
-        .bot-avatar { width: 34px; height: 34px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+        /* 对话区域 - 全屏 */
+        .chat-area { flex: 1; overflow-y: auto; padding: 20px; background: #fafafa; }
+        
+        .message { margin-bottom: 16px; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .message.bot { display: flex; gap: 12px; }
+        .bot-avatar { width: 38px; height: 38px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
         .bot-content { flex: 1; }
-        .bot-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
-        .bot-name { font-size: 10px; color: #999; }
-        .bot-model { font-size: 9px; padding: 2px 8px; border-radius: 8px; background: #e8f5e9; color: #2e7d32; }
-        .bot-text { background: #f8f9fa; padding: 10px 14px; border-radius: 12px 12px 12px 4px; font-size: 13px; line-height: 1.6; color: #333; }
-        .message.user { display: flex; justify-content: flex-end; }
-        .user-text { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px 14px; border-radius: 12px 12px 4px 12px; font-size: 13px; line-height: 1.6; max-width: 80%; }
+        .bot-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .bot-name { font-size: 12px; color: #999; }
+        .bot-model { font-size: 10px; background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 8px; }
+        .bot-text { background: white; padding: 12px 16px; border-radius: 16px 16px 16px 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); font-size: 15px; line-height: 1.6; color: #333; }
         
+        .message.user { display: flex; justify-content: flex-end; }
+        .user-text { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 16px; border-radius: 16px 16px 4px 16px; font-size: 15px; line-height: 1.6; max-width: 80%; }
+        
+        /* 消息操作 */
+        .message-actions { display: flex; gap: 12px; margin-top: 8px; padding-left: 50px; }
+        .action-btn { font-size: 12px; color: #999; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: color 0.3s; }
+        .action-btn:hover { color: #667eea; }
+        
+        /* 语音播报 */
+        .voice-play { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; background: #f0f4ff; border-radius: 16px; font-size: 12px; color: #667eea; cursor: pointer; margin-top: 8px; }
+        .voice-play.playing { animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        
+        /* 打字动画 */
         .typing { display: flex; gap: 4px; padding: 10px; }
         .typing-dot { width: 6px; height: 6px; background: #667eea; border-radius: 50%; animation: typing 1s infinite; }
         .typing-dot:nth-child(2) { animation-delay: 0.2s; }
         .typing-dot:nth-child(3) { animation-delay: 0.4s; }
         @keyframes typing { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
         
-        .func-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 8px; }
-        .func-card { background: #f8f9fa; border-radius: 12px; padding: 14px; text-align: center; cursor: pointer; transition: all 0.3s; }
-        .func-card:hover { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; transform: translateY(-2px); }
-        .func-icon { font-size: 30px; margin-bottom: 6px; }
-        .func-title { font-size: 12px; font-weight: 500; margin-bottom: 3px; }
-        .func-model { font-size: 9px; color: #999; }
+        /* 输入区域 */
+        .input-area { background: white; padding: 12px 16px; border-top: 1px solid #f0f0f0; }
         
-        .input-area { background: white; padding: 10px 15px; border-top: 1px solid #f0f0f0; }
-        .input-tools { display: flex; gap: 6px; margin-bottom: 8px; overflow-x: auto; }
+        /* 功能按钮 */
+        .input-tools { display: flex; gap: 10px; margin-bottom: 10px; overflow-x: auto; }
         .input-tools::-webkit-scrollbar { display: none; }
-        .tool-btn { display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: #f8f9fa; border: none; border-radius: 14px; font-size: 10px; color: #666; cursor: pointer; transition: all 0.3s; white-space: nowrap; }
+        .tool-btn { display: flex; align-items: center; gap: 5px; padding: 8px 14px; background: #f5f5f5; border: none; border-radius: 18px; font-size: 13px; color: #666; cursor: pointer; transition: all 0.3s; white-space: nowrap; }
         .tool-btn:hover { background: #667eea; color: white; }
-        .input-wrapper { display: flex; gap: 8px; align-items: flex-end; }
-        .input-box { flex: 1; background: #f8f9fa; border-radius: 20px; padding: 10px 16px; display: flex; align-items: center; }
-        .input-box input { flex: 1; border: none; background: none; font-size: 13px; outline: none; }
-        .send-btn { width: 40px; height: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 50%; color: white; font-size: 16px; cursor: pointer; }
-        .send-btn:disabled { background: #ccc; }
         
-        .bottom-nav { background: white; border-top: 1px solid #f0f0f0; display: flex; justify-content: space-around; padding: 6px 0; padding-bottom: calc(6px + env(safe-area-inset-bottom)); }
-        .nav-bottom { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; padding: 4px 16px; }
-        .nav-bottom.active { color: #667eea; }
-        .nav-icon-bottom { font-size: 18px; }
-        .nav-label-bottom { font-size: 9px; }
+        /* 输入框 */
+        .input-wrapper { display: flex; gap: 10px; align-items: flex-end; }
+        .input-box { flex: 1; background: #f5f5f5; border-radius: 22px; padding: 12px 18px; display: flex; align-items: center; }
+        .input-box textarea { flex: 1; border: none; background: none; resize: none; font-size: 15px; outline: none; max-height: 80px; line-height: 1.4; }
+        .send-btn { width: 44px; height: 44px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 50%; color: white; font-size: 18px; cursor: pointer; transition: all 0.3s; }
+        .send-btn:hover { transform: scale(1.05); }
+        .send-btn:disabled { background: #ccc; transform: none; }
         
+        /* 底部导航 */
+        .bottom-nav { background: white; border-top: 1px solid #f0f0f0; display: flex; justify-content: space-around; padding: 8px 0; padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 4px 20px; transition: all 0.3s; }
+        .nav-item.active { color: #667eea; }
+        .nav-icon { font-size: 22px; }
+        .nav-label { font-size: 10px; }
+        
+        /* 新建对话按钮 */
+        .new-chat-btn { position: fixed; right: 20px; bottom: 90px; width: 50px; height: 50px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 50%; color: white; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(102,126,234,0.4); z-index: 10; }
+        
+        /* 图片预览 */
         .image-preview { max-width: 100%; border-radius: 8px; margin-top: 8px; }
         .image-input { display: none; }
         
-        .status-card { background: #e8f5e9; border-radius: 12px; padding: 16px; margin-bottom: 12px; text-align: center; }
-        .status-icon { font-size: 36px; margin-bottom: 8px; }
-        .status-title { font-size: 14px; font-weight: bold; color: #2e7d32; margin-bottom: 6px; }
-        .status-text { font-size: 11px; color: #666; line-height: 1.6; }
+        /* 功能面板 */
+        .func-panel { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: white; z-index: 30; flex-direction: column; }
+        .func-panel.open { display: flex; }
+        .func-header { background: white; padding: 12px 16px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 10px; }
+        .func-back { font-size: 20px; cursor: pointer; }
+        .func-title { font-size: 16px; font-weight: 600; }
+        .func-content { flex: 1; overflow-y: auto; padding: 15px; }
+        
+        .func-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .func-card { background: #f8f9fa; border-radius: 14px; padding: 16px; text-align: center; cursor: pointer; transition: all 0.3s; }
+        .func-card:hover { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; transform: translateY(-2px); }
+        .func-icon { font-size: 32px; margin-bottom: 8px; }
+        .func-title-text { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+        .func-model { font-size: 10px; color: #999; }
+        .func-card:hover .func-model { color: rgba(255,255,255,0.8); }
     </style>
 </head>
 <body>
-    <div class="app">
-        <div class="header">
-            <div class="header-left">
-                <span class="logo">🐼</span>
-                <span class="title">TOKI</span>
-                <span class="version">V4.0</span>
+    <div class="phone">
+        <!-- 历史面板 -->
+        <div class="history-panel" id="historyPanel">
+            <div class="history-header">
+                <span class="history-title">历史对话</span>
+                <span class="history-close" onclick="toggleHistory()">×</span>
+            </div>
+            <div class="history-list">
+                <div class="history-item active">
+                    <div class="history-item-title">当前对话</div>
+                    <div class="history-item-preview">你好，我是 TOKI...</div>
+                </div>
+                <div class="history-item">
+                    <div class="history-item-title">Python 编程</div>
+                    <div class="history-item-preview">帮我写一个快速排序...</div>
+                </div>
+                <div class="history-item">
+                    <div class="history-item-title">图像生成</div>
+                    <div class="history-item-preview">画一只可爱的熊猫...</div>
+                </div>
             </div>
         </div>
         
-        <div class="model-bar">
-            <div class="model-badge">
-                <span>✅</span>
-                <span>双AI引擎已就绪</span>
-            </div>
-            <span class="model-tag" id="modelTag">🔥 星火 Lite</span>
-        </div>
+        <div class="overlay" id="overlay" onclick="toggleHistory()"></div>
         
-        <div class="feature-nav">
-            <div class="nav-item active" onclick="switchTab('chat')">
-                <span class="nav-icon">💬</span>
-                <span class="nav-label">对话</span>
+        <!-- 主界面 -->
+        <div class="main-view">
+            <!-- 顶部栏 -->
+            <div class="header">
+                <div class="header-left">
+                    <span class="header-btn" onclick="toggleHistory()">☰</span>
+                    <div class="panda-icon">🐼</div>
+                    <span class="header-title">TOKI</span>
+                    <span class="model-badge" id="modelBadge">双AI引擎</span>
+                </div>
+                <div style="display:flex;gap:12px;">
+                    <span class="header-btn" onclick="openFuncPanel('discover')">🔍</span>
+                    <span class="header-btn" onclick="openFuncPanel('settings')">⚙️</span>
+                </div>
             </div>
-            <div class="nav-item" onclick="switchTab('image')">
-                <span class="nav-icon">🎨</span>
-                <span class="nav-label">画图</span>
-            </div>
-            <div class="nav-item" onclick="switchTab('vision')">
-                <span class="nav-icon">👁️</span>
-                <span class="nav-label">识图</span>
-            </div>
-            <div class="nav-item" onclick="switchTab('code')">
-                <span class="nav-icon">💻</span>
-                <span class="nav-label">编程</span>
-            </div>
-        </div>
-        
-        <div class="content">
-            <div class="tab active" id="chatTab">
-                <div class="chat-area" id="chatArea">
-                    <div class="message bot">
-                        <div class="bot-avatar">🐼</div>
-                        <div class="bot-content">
-                            <div class="bot-header">
-                                <span class="bot-name">TOKI</span>
-                            </div>
-                            <div class="bot-text">
-                                你好！我是 TOKI 🐼<br><br>
-                                ✅ <b>双AI引擎已就绪</b><br><br>
-                                🔥 <b>星火 Lite</b> - 无限免费<br>
-                                💚 <b>智谱 GLM-4</b> - 8个免费模型<br><br>
-                                <b>智能路由自动选择最优模型！</b><br><br>
-                                试试不同功能吧！
-                            </div>
+            
+            <!-- 对话区域 -->
+            <div class="chat-area" id="chatArea">
+                <div class="message bot">
+                    <div class="bot-avatar">🐼</div>
+                    <div class="bot-content">
+                        <div class="bot-header">
+                            <span class="bot-name">TOKI</span>
+                            <span class="bot-model">✅ 双AI就绪</span>
+                        </div>
+                        <div class="bot-text">
+                            你好！我是 TOKI 🐼<br><br>
+                            ✅ <b>双AI引擎已就绪</b><br><br>
+                            🔥 星火 Lite - 无限免费<br>
+                            💚 智谱 GLM-4 - 8个免费模型<br><br>
+                            <b>智能路由自动选择最优模型</b>
+                        </div>
+                        <div class="voice-play" onclick="playVoice(this)">🔊 播报</div>
+                        <div class="message-actions">
+                            <span class="action-btn" onclick="copyMsg()">📋 复制</span>
+                            <span class="action-btn" onclick="regenerate()">🔄 重新生成</span>
+                            <span class="action-btn" onclick="collectMsg()">⭐ 收藏</span>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <div class="tab" id="imageTab">
-                <div class="func-grid">
-                    <div class="func-card" onclick="quickInput('画一只可爱的熊猫')">
-                        <div class="func-icon">🐼</div>
-                        <div class="func-title">画熊猫</div>
-                        <div class="func-model">CogView-3</div>
+            <!-- 输入区域 -->
+            <div class="input-area">
+                <div class="input-tools">
+                    <button class="tool-btn" onclick="openFuncPanel('voice')">🎤 语音通话</button>
+                    <button class="tool-btn" onclick="openFuncPanel('image')">🎨 画图</button>
+                    <button class="tool-btn" onclick="openFuncPanel('code')">💻 编程</button>
+                    <button class="tool-btn" onclick="document.getElementById('imageInput').click()">📷 图片</button>
+                </div>
+                <div class="input-wrapper">
+                    <div class="input-box">
+                        <textarea id="inputText" placeholder="输入消息..." rows="1" onkeydown="handleKeydown(event)"></textarea>
                     </div>
-                    <div class="func-card" onclick="quickInput('画一片美丽的风景')">
-                        <div class="func-icon">🏔️</div>
-                        <div class="func-title">画风景</div>
-                        <div class="func-model">CogView-3</div>
-                    </div>
-                    <div class="func-card" onclick="quickInput('画一个科幻场景')">
-                        <div class="func-icon">🚀</div>
-                        <div class="func-title">科幻场景</div>
-                        <div class="func-model">CogView-3</div>
-                    </div>
-                    <div class="func-card" onclick="quickInput('画一只卡通猫咪')">
-                        <div class="func-icon">🐱</div>
-                        <div class="func-title">卡通动物</div>
-                        <div class="func-model">CogView-3</div>
-                    </div>
+                    <button class="send-btn" id="sendBtn" onclick="send()">➤</button>
                 </div>
             </div>
             
-            <div class="tab" id="visionTab">
-                <div style="text-align:center;padding:30px 20px;">
-                    <div style="font-size:48px;margin-bottom:15px;">👁️</div>
-                    <div style="font-size:14px;color:#333;margin-bottom:10px;">图像识别</div>
-                    <div style="font-size:12px;color:#666;margin-bottom:20px;">
-                        上传图片，AI自动识别内容<br>
-                        支持 OCR、物体识别、场景分析
-                    </div>
-                    <button class="tool-btn" style="padding:10px 20px;font-size:12px;" onclick="document.getElementById('imageInput').click()">
-                        📷 上传图片
-                    </button>
-                    <input type="file" id="imageInput" class="image-input" accept="image/*" onchange="handleImageUpload(event)">
-                    <div id="imagePreview"></div>
+            <!-- 底部导航 -->
+            <div class="bottom-nav">
+                <div class="nav-item active" onclick="switchNav(this)">
+                    <span class="nav-icon">💬</span>
+                    <span class="nav-label">对话</span>
+                </div>
+                <div class="nav-item" onclick="switchNav(this);openFuncPanel('discover')">
+                    <span class="nav-icon">🔍</span>
+                    <span class="nav-label">发现</span>
+                </div>
+                <div class="nav-item" onclick="switchNav(this);openFuncPanel('create')">
+                    <span class="nav-icon">✨</span>
+                    <span class="nav-label">创作</span>
+                </div>
+                <div class="nav-item" onclick="switchNav(this);openFuncPanel('profile')">
+                    <span class="nav-icon">👤</span>
+                    <span class="nav-label">我的</span>
                 </div>
             </div>
             
-            <div class="tab" id="codeTab">
-                <div class="func-grid">
-                    <div class="func-card" onclick="quickInput('写一个Python快速排序')">
-                        <div class="func-icon">🐍</div>
-                        <div class="func-title">Python</div>
-                        <div class="func-model">CodeGeeX-4</div>
-                    </div>
-                    <div class="func-card" onclick="quickInput('写一个JavaScript函数')">
-                        <div class="func-icon">📜</div>
-                        <div class="func-title">JavaScript</div>
-                        <div class="func-model">CodeGeeX-4</div>
-                    </div>
-                    <div class="func-card" onclick="quickInput('解释这段代码的作用')">
-                        <div class="func-icon">🔍</div>
-                        <div class="func-title">代码解释</div>
-                        <div class="func-model">CodeGeeX-4</div>
-                    </div>
-                    <div class="func-card" onclick="quickInput('帮我优化这段代码')">
-                        <div class="func-icon">⚡</div>
-                        <div class="func-title">代码优化</div>
-                        <div class="func-model">CodeGeeX-4</div>
-                    </div>
-                </div>
-            </div>
+            <!-- 新建对话按钮 -->
+            <button class="new-chat-btn" onclick="newChat()">✚</button>
         </div>
         
-        <div class="input-area">
-            <div class="input-tools">
-                <button class="tool-btn" onclick="setMode('chat')">💬 对话</button>
-                <button class="tool-btn" onclick="setMode('image')">🎨 画图</button>
-                <button class="tool-btn" onclick="setMode('code')">💻 编程</button>
-                <button class="tool-btn" onclick="document.getElementById('imageInput').click()">📷 图片</button>
-            </div>
-            <div class="input-wrapper">
-                <div class="input-box">
-                    <input type="text" id="inputText" placeholder="输入消息..." onkeydown="if(event.key==='Enter')send()">
-                </div>
-                <button class="send-btn" id="sendBtn" onclick="send()">➤</button>
-            </div>
+        <input type="file" id="imageInput" class="image-input" accept="image/*" onchange="handleImageUpload(event)">
+    </div>
+    
+    <!-- 功能面板 -->
+    <div class="func-panel" id="funcPanel">
+        <div class="func-header">
+            <span class="func-back" onclick="closeFuncPanel()">←</span>
+            <span class="func-title" id="funcPanelTitle">功能</span>
         </div>
-        
-        <div class="bottom-nav">
-            <div class="nav-bottom active" onclick="switchNav(this)"><span class="nav-icon-bottom">💬</span><span class="nav-label-bottom">对话</span></div>
-            <div class="nav-bottom" onclick="switchNav(this)"><span class="nav-icon-bottom">🔍</span><span class="nav-label-bottom">发现</span></div>
-            <div class="nav-bottom" onclick="switchNav(this)"><span class="nav-icon-bottom">👤</span><span class="nav-label-bottom">我的</span></div>
-        </div>
+        <div class="func-content" id="funcPanelContent"></div>
     </div>
 
     <script>
-        // ============ 双AI引擎配置 ============
+        // ============ AI配置 ============
         const SPARK_KEY = 'a5f5156fb7cb051d55866912f67178d0';
         const ZHIPU_KEY = 'c4911cf15f844167bd26301e25622cf1.n1BU10ytXbnQ6N5d';
         
         const MODELS = {
-            'spark-lite': { name: '星火 Lite', icon: '🔥', type: 'chat' },
-            'glm-4-flash': { name: 'GLM-4-Flash', icon: '💬', type: 'chat' },
-            'glm-4v-flash': { name: 'GLM-4V', icon: '👁️', type: 'vision' },
-            'cogview-3-flash': { name: 'CogView-3', icon: '🎨', type: 'image' },
-            'codegeex-4': { name: 'CodeGeeX-4', icon: '💻', type: 'code' }
+            'spark-lite': { name: '星火 Lite', icon: '🔥' },
+            'glm-4-flash': { name: 'GLM-4-Flash', icon: '💬' },
+            'glm-4v-flash': { name: 'GLM-4V', icon: '👁️' },
+            'cogview-3-flash': { name: 'CogView-3', icon: '🎨' },
+            'codegeex-4': { name: 'CodeGeeX-4', icon: '💻' }
         };
         
-        // 智能路由
         function route(msg) {
             const m = msg.toLowerCase();
             if (['画', '生成图片', '画图', '绘图'].some(k => m.includes(k))) return 'cogview-3-flash';
@@ -254,7 +261,6 @@
             return 'glm-4-flash';
         }
         
-        // 星火
         async function callSpark(msg) {
             try {
                 const res = await fetch('https://spark-api-open.xf-yun.com/v1/chat', {
@@ -267,7 +273,6 @@
             } catch(e) { return { text: '网络问题', model: 'spark-lite' }; }
         }
         
-        // 智谱对话
         async function callZhipu(msg, modelId = 'glm-4-flash') {
             try {
                 const res = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
@@ -280,7 +285,6 @@
             } catch(e) { return callSpark(msg); }
         }
         
-        // 智谱画图
         async function generateImage(prompt) {
             try {
                 const res = await fetch('https://open.bigmodel.cn/api/paas/v4/images/generations', {
@@ -294,7 +298,6 @@
             } catch(e) { return { text: '图片生成出错', model: 'cogview-3-flash' }; }
         }
         
-        // 智谱识图
         async function analyzeImage(msg, imageData) {
             try {
                 const res = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
@@ -310,10 +313,10 @@
             } catch(e) { return { text: '图像识别失败', model: 'glm-4v-flash' }; }
         }
         
-        // 统一调用
         async function callAI(msg, imageData = null) {
             const modelId = route(msg);
-            document.getElementById('modelTag').textContent = `${MODELS[modelId].icon} ${MODELS[modelId].name}`;
+            const m = MODELS[modelId];
+            document.getElementById('modelBadge').textContent = `${m.icon} ${m.name}`;
             
             if (modelId === 'spark-lite') return await callSpark(msg);
             if (modelId === 'cogview-3-flash') return await generateImage(msg);
@@ -322,26 +325,73 @@
         }
         
         // ============ UI ============
-        function switchTab(t) {
-            document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
-            event.currentTarget.classList.add('active');
-            document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-            document.getElementById(t+'Tab').classList.add('active');
+        function toggleHistory() {
+            document.getElementById('historyPanel').classList.toggle('open');
+            document.getElementById('overlay').classList.toggle('visible');
         }
         
         function switchNav(el) {
-            document.querySelectorAll('.nav-bottom').forEach(n=>n.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             el.classList.add('active');
         }
         
-        function setMode(m) {
-            const p = { chat: '输入消息...', image: '描述你想画的图片...', code: '描述编程任务...' };
-            document.getElementById('inputText').placeholder = p[m] || '输入消息...';
+        function openFuncPanel(type) {
+            const panel = document.getElementById('funcPanel');
+            const title = document.getElementById('funcPanelTitle');
+            const content = document.getElementById('funcPanelContent');
+            
+            const panels = {
+                'voice': {
+                    title: '🎤 语音通话',
+                    content: `<div style="text-align:center;padding:60px 20px;"><div style="font-size:80px;margin-bottom:20px;">🐼</div><div style="font-size:18px;color:#333;margin-bottom:10px;">语音通话</div><div style="font-size:14px;color:#666;margin-bottom:30px;">和熊猫TOKI打电话</div><button class="tool-btn" style="padding:12px 30px;font-size:14px;" onclick="alert('语音通话功能开发中')">🎤 开始通话</button></div>`
+                },
+                'image': {
+                    title: '🎨 图像生成',
+                    content: `<div class="func-grid"><div class="func-card" onclick="quickInput('画一只可爱的熊猫')"><div class="func-icon">🐼</div><div class="func-title-text">画熊猫</div><div class="func-model">CogView-3</div></div><div class="func-card" onclick="quickInput('画一片美丽的风景')"><div class="func-icon">🏔️</div><div class="func-title-text">画风景</div><div class="func-model">CogView-3</div></div><div class="func-card" onclick="quickInput('画一个科幻场景')"><div class="func-icon">🚀</div><div class="func-title-text">科幻场景</div><div class="func-model">CogView-3</div></div><div class="func-card" onclick="quickInput('画一只卡通猫咪')"><div class="func-icon">🐱</div><div class="func-title-text">卡通动物</div><div class="func-model">CogView-3</div></div></div>`
+                },
+                'code': {
+                    title: '💻 编程助手',
+                    content: `<div class="func-grid"><div class="func-card" onclick="quickInput('写一个Python快速排序')"><div class="func-icon">🐍</div><div class="func-title-text">Python</div><div class="func-model">CodeGeeX-4</div></div><div class="func-card" onclick="quickInput('写一个JavaScript函数')"><div class="func-icon">📜</div><div class="func-title-text">JavaScript</div><div class="func-model">CodeGeeX-4</div></div><div class="func-card" onclick="quickInput('解释这段代码的作用')"><div class="func-icon">🔍</div><div class="func-title-text">代码解释</div><div class="func-model">CodeGeeX-4</div></div><div class="func-card" onclick="quickInput('帮我优化这段代码')"><div class="func-icon">⚡</div><div class="func-title-text">代码优化</div><div class="func-model">CodeGeeX-4</div></div></div>`
+                },
+                'discover': {
+                    title: '🔍 发现',
+                    content: `<div style="padding:20px;"><div style="font-size:16px;font-weight:bold;margin-bottom:15px;">✨ 热门功能</div><div class="func-grid"><div class="func-card" onclick="quickInput('写一首关于春天的诗')"><div class="func-icon">📝</div><div class="func-title-text">写诗</div></div><div class="func-card" onclick="quickInput('讲一个有趣的笑话')"><div class="func-icon">😄</div><div class="func-title-text">讲笑话</div></div><div class="func-card" onclick="quickInput('推荐几部好看的电影')"><div class="func-icon">🎬</div><div class="func-title-text">电影推荐</div></div><div class="func-card" onclick="quickInput('帮我制定学习计划')"><div class="func-icon">📚</div><div class="func-title-text">学习计划</div></div></div></div>`
+                },
+                'create': {
+                    title: '✨ 创作',
+                    content: `<div class="func-grid"><div class="func-card" onclick="quickInput('帮我写一篇文章')"><div class="func-icon">📄</div><div class="func-title-text">写文章</div></div><div class="func-card" onclick="quickInput('写一篇朋友圈文案')"><div class="func-icon">💬</div><div class="func-title-text">朋友圈</div></div><div class="func-card" onclick="quickInput('写一封邮件')"><div class="func-icon">📧</div><div class="func-title-text">写邮件</div></div><div class="func-card" onclick="quickInput('写一个故事')"><div class="func-icon">📖</div><div class="func-title-text">写故事</div></div></div>`
+                },
+                'profile': {
+                    title: '👤 我的',
+                    content: `<div style="padding:20px;"><div style="text-align:center;margin-bottom:30px;"><div style="font-size:60px;margin-bottom:10px;">🐼</div><div style="font-size:18px;font-weight:bold;">TOKI V4.0</div><div style="font-size:12px;color:#666;margin-top:5px;">智能AI助手</div></div><div style="background:#f8f9fa;border-radius:12px;padding:15px;margin-bottom:15px;"><div style="font-size:12px;color:#666;margin-bottom:8px;">AI引擎</div><div style="font-size:14px;">🔥 星火 Lite (无限免费)<br>💚 智谱 GLM-4 (8个免费模型)</div></div></div>`
+                },
+                'settings': {
+                    title: '⚙️ 设置',
+                    content: `<div style="padding:20px;"><div style="background:#e8f5e9;border-radius:12px;padding:15px;margin-bottom:15px;"><div style="font-size:14px;color:#2e7d32;margin-bottom:5px;">✅ 双AI引擎已就绪</div><div style="font-size:12px;color:#666;">智能路由自动选择最优模型</div></div><div style="font-size:12px;color:#999;text-align:center;">TOKI V4.0 · Powered by TOKIClaw</div></div>`
+                }
+            };
+            
+            const p = panels[type] || { title: '功能', content: '' };
+            title.textContent = p.title;
+            content.innerHTML = p.content;
+            panel.classList.add('open');
+        }
+        
+        function closeFuncPanel() {
+            document.getElementById('funcPanel').classList.remove('open');
         }
         
         function quickInput(txt) {
             document.getElementById('inputText').value = txt;
+            closeFuncPanel();
             send();
+        }
+        
+        function handleKeydown(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                send();
+            }
         }
         
         async function send() {
@@ -372,7 +422,21 @@
                 const modelInfo = MODELS[model] || { name: model, icon: '🤖' };
                 let content = txt;
                 if (image) content += `<br><br><img src="${image}" style="max-width:100%;border-radius:8px;">`;
-                m.innerHTML = `<div class="bot-avatar">🐼</div><div class="bot-content"><div class="bot-header"><span class="bot-name">TOKI</span><span class="bot-model">${modelInfo.icon} ${modelInfo.name}</span></div><div class="bot-text">${content}</div></div>`;
+                
+                m.innerHTML = `<div class="bot-avatar">🐼</div>
+                    <div class="bot-content">
+                        <div class="bot-header">
+                            <span class="bot-name">TOKI</span>
+                            <span class="bot-model">${modelInfo.icon} ${modelInfo.name}</span>
+                        </div>
+                        <div class="bot-text">${content}</div>
+                        <div class="voice-play" onclick="playVoice(this,'${txt.replace(/'/g,"\\'")}')">🔊 播报</div>
+                        <div class="message-actions">
+                            <span class="action-btn" onclick="copyMsg(this)">📋 复制</span>
+                            <span class="action-btn" onclick="regenerate()">🔄 重新生成</span>
+                            <span class="action-btn" onclick="collectMsg()">⭐ 收藏</span>
+                        </div>
+                    </div>`;
             }
             
             a.appendChild(m);
@@ -391,6 +455,27 @@
         
         function hideTyping() { document.getElementById('typing')?.remove(); }
         
+        function playVoice(btn, txt) {
+            if ('speechSynthesis' in window) {
+                const u = new SpeechSynthesisUtterance(txt);
+                u.lang = 'zh-CN';
+                btn.classList.add('playing');
+                u.onend = () => btn.classList.remove('playing');
+                speechSynthesis.speak(u);
+            }
+        }
+        
+        function copyMsg(btn) {
+            const text = btn.closest('.bot-content').querySelector('.bot-text').textContent;
+            navigator.clipboard?.writeText(text);
+            btn.textContent = '✅ 已复制';
+            setTimeout(() => btn.textContent = '📋 复制', 2000);
+        }
+        
+        function regenerate() { alert('重新生成功能开发中'); }
+        function collectMsg() { alert('已收藏 ⭐'); }
+        function newChat() { document.getElementById('chatArea').innerHTML = ''; }
+        
         function handleImageUpload(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -398,21 +483,18 @@
             const reader = new FileReader();
             reader.onload = async (event) => {
                 const imageData = event.target.result;
-                document.getElementById('imagePreview').innerHTML = `<img src="${imageData}" class="image-preview">`;
-                switchTab('chat');
                 addMsg('user', '📷 上传了图片');
                 
                 showTyping();
                 const { text, model } = await callAI('请描述这张图片', imageData);
                 hideTyping();
+                
                 addMsg('bot', text, model);
             };
             reader.readAsDataURL(file);
         }
         
-        console.log('🐼 TOKI V4.0 - 双AI引擎已就绪');
-        console.log('🔥 星火 Lite (无限免费)');
-        console.log('💚 智谱 GLM-4 / CogView-3 / GLM-4V / CodeGeeX-4 (免费)');
+        console.log('🐼 TOKI V4.0 - 豆包风格界面');
     </script>
 </body>
 </html>
