@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>百度语音测试</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 400px; margin: 0 auto; }
+        .test-item { background: #f5f5f5; padding: 15px; margin-bottom: 15px; border-radius: 10px; }
+        .btn { background: #667eea; color: white; border: none; padding: 12px 20px; border-radius: 20px; cursor: pointer; margin: 5px; }
+        .btn:disabled { background: #ccc; }
+        .result { margin-top: 10px; padding: 10px; background: #e8f5e9; border-radius: 8px; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e9; color: #2e7d32; }
+    </style>
+</head>
+<body>
+    <h1>🎤 百度语音API测试</h1>
+    
+    <div class="test-item">
+        <h3>1. 测试获取Token</h3>
+        <button class="btn" onclick="testToken()">获取Token</button>
+        <div class="result" id="tokenResult">点击测试</div>
+    </div>
+    
+    <div class="test-item">
+        <h3>2. 测试语音合成（TTS）</h3>
+        <input type="text" id="ttsText" value="你好，我是TOKI" style="width:100%;padding:8px;margin-bottom:10px;">
+        <button class="btn" onclick="testTTS()">播放语音</button>
+        <div class="result" id="ttsResult">点击测试</div>
+    </div>
+    
+    <div class="test-item">
+        <h3>3. 测试录音</h3>
+        <button class="btn" id="recordBtn" onclick="toggleRecord()">开始录音</button>
+        <div class="result" id="recordResult">点击测试</div>
+    </div>
+
+    <script>
+        const BAIDU = {
+            API_KEY: 'KzPJnG6YSZXZKM1ic9KsrAGi',
+            SECRET_KEY: 'JGACwssuiimzcyJOJD9JNaIacYZchdze'
+        };
+        
+        let token = null;
+        let recorder = null;
+        let chunks = [];
+        let recording = false;
+        
+        // 测试Token
+        async function testToken() {
+            const el = document.getElementById('tokenResult');
+            el.textContent = '请求中...';
+            el.className = 'result';
+            
+            try {
+                const url = `https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=${BAIDU.API_KEY}&client_secret=${BAIDU.SECRET_KEY}`;
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                if (data.access_token) {
+                    token = data.access_token;
+                    el.textContent = '✅ Token获取成功！';
+                    el.className = 'result success';
+                    console.log('Token:', token);
+                } else {
+                    el.textContent = '❌ 错误: ' + JSON.stringify(data);
+                    el.className = 'result error';
+                }
+            } catch(e) {
+                el.textContent = '❌ 网络错误: ' + e.message;
+                el.className = 'result error';
+            }
+        }
+        
+        // 测试TTS
+        async function testTTS() {
+            const el = document.getElementById('ttsResult');
+            const text = document.getElementById('ttsText').value;
+            
+            el.textContent = '合成中...';
+            el.className = 'result';
+            
+            if (!token) {
+                await testToken();
+            }
+            
+            try {
+                const url = `https://tsn.baidu.com/text2audio?tex=${encodeURIComponent(text)}&tok=${token}&cuid=TOKI&ctp=1&lan=zh&spd=5&pit=5&vol=9&per=4`;
+                
+                const res = await fetch(url);
+                const blob = await res.blob();
+                
+                if (blob.size > 0) {
+                    const audioUrl = URL.createObjectURL(blob);
+                    const audio = new Audio(audioUrl);
+                    await audio.play();
+                    el.textContent = '✅ 播放成功！';
+                    el.className = 'result success';
+                } else {
+                    el.textContent = '❌ 合成失败';
+                    el.className = 'result error';
+                }
+            } catch(e) {
+                el.textContent = '❌ 错误: ' + e.message;
+                el.className = 'result error';
+            }
+        }
+        
+        // 测试录音
+        async function toggleRecord() {
+            const btn = document.getElementById('recordBtn');
+            const el = document.getElementById('recordResult');
+            
+            if (recording) {
+                // 停止录音
+                recorder.stop();
+                recording = false;
+                btn.textContent = '开始录音';
+                el.textContent = '处理中...';
+            } else {
+                // 开始录音
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    recorder = new MediaRecorder(stream);
+                    chunks = [];
+                    
+                    recorder.ondataavailable = (e) => chunks.push(e.data);
+                    
+                    recorder.onstop = async () => {
+                        const blob = new Blob(chunks, { type: 'audio/webm' });
+                        el.textContent = `✅ 录音成功！大小: ${blob.size} bytes`;
+                        el.className = 'result success';
+                        
+                        // 播放录音
+                        const url = URL.createObjectURL(blob);
+                        new Audio(url).play();
+                    };
+                    
+                    recorder.start();
+                    recording = true;
+                    btn.textContent = '停止录音';
+                    el.textContent = '🔴 正在录音...';
+                    el.className = 'result';
+                    
+                } catch(e) {
+                    el.textContent = '❌ 麦克风错误: ' + e.message;
+                    el.className = 'result error';
+                }
+            }
+        }
+        
+        // 自动测试Token
+        testToken();
+    </script>
+</body>
+</html>
