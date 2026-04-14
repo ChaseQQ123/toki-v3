@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TOKI - AI语音通话（百度语音版）</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 头部 */
+        .header {
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .timer {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        /* AI形象区域 */
+        .ai-avatar-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .ai-avatar {
+            width: 200px;
+            height: 200px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 100px;
+            margin-bottom: 20px;
+            animation: pulse 2s ease-in-out infinite;
+            box-shadow: 0 0 60px rgba(255,255,255,0.3);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        @keyframes speaking {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .ai-status {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        
+        .ai-message {
+            background: rgba(255,255,255,0.1);
+            padding: 15px 20px;
+            border-radius: 20px;
+            max-width: 80%;
+            text-align: center;
+            font-size: 16px;
+            line-height: 1.6;
+            min-height: 60px;
+        }
+        
+        /* 音色选择 */
+        .voice-selector {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 20px;
+            padding: 0 20px;
+        }
+        
+        .voice-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .voice-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .voice-btn.active {
+            background: white;
+            color: #667eea;
+        }
+        
+        /* 控制按钮 */
+        .controls {
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        
+        .control-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .start-btn {
+            background: #4CAF50;
+            color: white;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        .start-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .end-btn {
+            background: #ff4444;
+            color: white;
+        }
+        
+        .end-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .mute-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+        
+        .mute-btn.active {
+            background: #ff8800;
+        }
+        
+        /* 提示信息 */
+        .hint {
+            text-align: center;
+            padding: 10px 20px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.7);
+        }
+        
+        /* 状态指示器 */
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4CAF50;
+            animation: blink 1s ease-in-out infinite;
+        }
+        
+        .status-dot.inactive {
+            background: #999;
+            animation: none;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <button class="back-btn" onclick="goBack()">← 返回</button>
+            <div class="timer" id="timer">00:00</div>
+        </div>
+        
+        <!-- AI形象区域 -->
+        <div class="ai-avatar-container">
+            <div class="ai-avatar" id="aiAvatar">🤖</div>
+            <div class="status-indicator">
+                <div class="status-dot inactive" id="statusDot"></div>
+                <span id="statusText">未连接</span>
+            </div>
+            <div class="ai-message" id="aiMessage">选择喜欢的音色，点击绿色按钮开始语音对话</div>
+        </div>
+        
+        <!-- 音色选择 -->
+        <div class="voice-selector">
+            <button class="voice-btn active" onclick="selectVoice(0, this)">👧 小美</button>
+            <button class="voice-btn" onclick="selectVoice(1, this)">👦 小宇</button>
+            <button class="voice-btn" onclick="selectVoice(3, this)">😄 逍遥</button>
+            <button class="voice-btn" onclick="selectVoice(4, this)">👧 丫丫</button>
+            <button class="voice-btn" onclick="selectVoice(103, this)">🤖 度米朵</button>
+            <button class="voice-btn" onclick="selectVoice(106, this)">🎤 广播</button>
+        </div>
+        
+        <!-- 控制按钮 -->
+        <div class="controls">
+            <button class="mute-btn" id="muteBtn" onclick="toggleMute()" style="display:none;">🎤</button>
+            <button class="start-btn" id="startBtn" onclick="startCall()">📞</button>
+            <button class="end-btn" id="endBtn" onclick="endCall()" style="display:none;">📞</button>
+        </div>
+        
+        <!-- 提示 -->
+        <div class="hint" id="hint">使用百度语音合成 · 每日500次免费</div>
+    </div>
+    
+    <script>
+        // ============ API配置 ============
+        // 智谱AI（对话）
+        const ZHIPU_API_KEY = 'c4911cf15f844167bd26301e25622cf1.n1BU10ytXbnQ6N5d';
+        const ZHIPU_BASE_URL = 'https://open.bigmodel.cn/api/paas/v4';
+        
+        // 百度语音API
+        const BAIDU_APP_ID = '122852124';
+        const BAIDU_API_KEY = 'KzPJnG6YSZXZKM1ic9KsrAGi';
+        const BAIDU_SECRET_KEY = 'JGACwssuiimzcyJOJD9JNaIacYZchdze';
+        
+        // ============ 状态管理 ============
+        let isCallActive = false;
+        let isMuted = false;
+        let callStartTime = null;
+        let timerInterval = null;
+        let recognition = null;
+        let conversationHistory = [];
+        let currentVoice = 0; // 默认小美
+        let baiduAccessToken = null;
+        let audioPlayer = new Audio();
+        
+        // ============ 百度语音API ============
+        
+        // 获取百度Access Token
+        async function getBaiduAccessToken() {
+            if (baiduAccessToken) return baiduAccessToken;
+            
+            try {
+                const response = await fetch(`https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=${BAIDU_API_KEY}&client_secret=${BAIDU_SECRET_KEY}`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                baiduAccessToken = data.access_token;
+                console.log('✅ 百度Access Token获取成功');
+                return baiduAccessToken;
+            } catch (error) {
+                console.error('❌ 获取百度Token失败:', error);
+                return null;
+            }
+        }
+        
+        // 百度语音合成
+        async function baiduTTS(text, voice = 0) {
+            const token = await getBaiduAccessToken();
+            if (!token) {
+                console.error('无法获取百度Token，使用浏览器TTS');
+                return fallbackTTS(text);
+            }
+            
+            try {
+                // 百度TTS API
+                const url = `https://tsn.baidu.com/text2audio?tex=${encodeURIComponent(text)}&tok=${token}&cuid=toki_app&ctp=1&lan=zh&spd=5&pit=5&vol=9&per=${voice}&aue=6`;
+                
+                console.log('🔊 百度语音合成:', text.substring(0, 30) + '...');
+                return url;
+            } catch (error) {
+                console.error('❌ 百度TTS失败:', error);
+                return fallbackTTS(text);
+            }
+        }
+        
+        // 备用TTS（浏览器自带）
+        function fallbackTTS(text) {
+            return new Promise((resolve) => {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'zh-CN';
+                utterance.rate = 1.0;
+                
+                const voices = speechSynthesis.getVoices();
+                const zhVoice = voices.find(v => v.lang.includes('zh'));
+                if (zhVoice) utterance.voice = zhVoice;
+                
+                speechSynthesis.speak(utterance);
+                resolve(null); // 返回null表示使用浏览器TTS
+            });
+        }
+        
+        // 播放语音
+        async function speak(text) {
+            updateStatus('正在说话...', true);
+            document.getElementById('aiAvatar').style.animation = 'speaking 0.5s ease-in-out infinite';
+            
+            // 暂停语音识别
+            if (recognition) {
+                try { recognition.stop(); } catch(e) {}
+            }
+            
+            // 获取百度语音URL
+            const audioUrl = await baiduTTS(text, currentVoice);
+            
+            if (audioUrl) {
+                // 使用百度语音
+                audioPlayer.src = audioUrl;
+                audioPlayer.onended = () => {
+                    onSpeechEnd();
+                };
+                audioPlayer.onerror = (e) => {
+                    console.error('音频播放错误:', e);
+                    onSpeechEnd();
+                };
+                audioPlayer.play().catch(e => {
+                    console.error('播放失败:', e);
+                    fallbackTTS(text);
+                    setTimeout(onSpeechEnd, 2000);
+                });
+            } else {
+                // 浏览器TTS已在fallbackTTS中处理
+                setTimeout(onSpeechEnd, text.length * 100);
+            }
+            
+            updateAIMessage(text);
+        }
+        
+        // 语音播放结束
+        function onSpeechEnd() {
+            document.getElementById('aiAvatar').style.animation = 'pulse 2s ease-in-out infinite';
+            
+            if (isCallActive && !isMuted) {
+                setTimeout(() => {
+                    if (recognition && isCallActive && !isMuted) {
+                        try {
+                            recognition.start();
+                            updateStatus('正在聆听...', true);
+                        } catch (e) {
+                            console.error('重启识别失败:', e);
+                        }
+                    }
+                }, 500);
+            }
+        }
+        
+        // ============ 语音识别 ============
+        
+        function initSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            if (!SpeechRecognition) {
+                alert('⚠️ 你的浏览器不支持语音识别\n\n请使用：\n• Chrome浏览器（推荐）\n• Edge浏览器');
+                return false;
+            }
+            
+            recognition = new SpeechRecognition();
+            recognition.lang = 'zh-CN';
+            recognition.continuous = true;
+            recognition.interimResults = false;
+            
+            recognition.onresult = async (event) => {
+                const last = event.results.length - 1;
+                const text = event.results[last][0].transcript;
+                
+                console.log('✅ 识别到:', text);
+                await processUserInput(text);
+            };
+            
+            recognition.onerror = (event) => {
+                console.error('❌ 识别错误:', event.error);
+                if (event.error === 'not-allowed') {
+                    alert('❌ 麦克风权限被拒绝');
+                }
+            };
+            
+            recognition.onend = () => {
+                if (isCallActive && !isMuted) {
+                    setTimeout(() => {
+                        if (isCallActive && !isMuted && recognition) {
+                            try {
+                                recognition.start();
+                            } catch (e) {}
+                        }
+                    }, 500);
+                }
+            };
+            
+            return true;
+        }
+        
+        // ============ AI对话 ============
+        
+        async function processUserInput(text) {
+            updateStatus('思考中...', true);
+            
+            try {
+                conversationHistory.push({ role: 'user', content: text });
+                
+                const response = await fetch(`${ZHIPU_BASE_URL}/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${ZHIPU_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: 'glm-4-flash',
+                        messages: [
+                            {
+                                role: 'system',
+                                content: '你是TOKI，一个AI语音助手。用户正在通过语音与你实时对话，你的回复会被语音合成播放出来。请用自然、口语化的方式回答，就像在打电话一样。回答要简洁友好，控制在50字以内。'
+                            },
+                            ...conversationHistory.slice(-10)
+                        ]
+                    })
+                });
+                
+                const data = await response.json();
+                const reply = data.choices[0].message.content;
+                
+                conversationHistory.push({ role: 'assistant', content: reply });
+                
+                await speak(reply);
+                
+            } catch (error) {
+                console.error('API调用失败:', error);
+                await speak('抱歉，网络出了一点问题，请稍后再试。');
+            }
+        }
+        
+        // ============ UI控制 ============
+        
+        function selectVoice(voice, btn) {
+            currentVoice = voice;
+            document.querySelectorAll('.voice-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            console.log('选择音色:', voice);
+            
+            // 试听
+            speak('你好，我是TOKI');
+        }
+        
+        function updateStatus(text, active) {
+            document.getElementById('statusText').textContent = text;
+            document.getElementById('statusDot').classList.toggle('inactive', !active);
+        }
+        
+        function updateAIMessage(message) {
+            document.getElementById('aiMessage').textContent = message;
+        }
+        
+        function startCall() {
+            if (!initSpeechRecognition()) return;
+            
+            isCallActive = true;
+            callStartTime = Date.now();
+            
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('endBtn').style.display = 'flex';
+            document.getElementById('muteBtn').style.display = 'flex';
+            
+            timerInterval = setInterval(updateTimer, 1000);
+            
+            try {
+                recognition.start();
+                updateStatus('正在聆听...', true);
+            } catch (e) {
+                console.error('启动失败:', e);
+            }
+            
+            setTimeout(() => {
+                speak('你好！我是TOKI，有什么可以帮你的吗？');
+            }, 1000);
+        }
+        
+        function endCall() {
+            isCallActive = false;
+            
+            if (recognition) try { recognition.stop(); } catch(e) {}
+            if (audioPlayer) audioPlayer.pause();
+            
+            if (timerInterval) clearInterval(timerInterval);
+            
+            document.getElementById('startBtn').style.display = 'flex';
+            document.getElementById('endBtn').style.display = 'none';
+            document.getElementById('muteBtn').style.display = 'none';
+            
+            updateStatus('通话已结束', false);
+        }
+        
+        function toggleMute() {
+            isMuted = !isMuted;
+            document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🎤';
+            document.getElementById('muteBtn').classList.toggle('active', isMuted);
+            
+            if (isMuted) {
+                if (recognition) try { recognition.stop(); } catch(e) {}
+                updateStatus('已静音', false);
+            } else {
+                if (recognition) try { recognition.start(); } catch(e) {}
+                updateStatus('正在聆听...', true);
+            }
+        }
+        
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - callStartTime) / 1000);
+            const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const seconds = (elapsed % 60).toString().padStart(2, '0');
+            document.getElementById('timer').textContent = `${minutes}:${seconds}`;
+        }
+        
+        function goBack() {
+            endCall();
+            window.location.href = 'index.html';
+        }
+        
+        // 预加载百度Token
+        getBaiduAccessToken();
+    </script>
+</body>
+</html>

@@ -556,9 +556,9 @@
                 id: 'voice',
                 name: '语音助手',
                 icon: '🎤',
-                description: '智谱AI语音对话',
+                description: '百度语音合成（多音色）',
                 isExternal: true,
-                url: 'video-call.html'
+                url: 'voice-baidu.html'
             },
             spark: {
                 id: 'spark',
@@ -897,8 +897,12 @@
             
             addMessage('📷 请识别这张图片的内容', 'user');
             addMessage('<img src="' + window.uploadedImageUrl + '" style="max-width:100%;border-radius:8px;">', 'bot');
+            addMessage('🔍 正在识别图片...', 'bot');
             
             try {
+                console.log('📤 开始图像识别...');
+                
+                // 智谱AI GLM-4V-Flash 图像识别
                 const response = await fetch(`${BASE_URL}/chat/completions`, {
                     method: 'POST',
                     headers: {
@@ -910,23 +914,48 @@
                         messages: [{
                             role: 'user',
                             content: [
-                                { type: 'text', text: '请详细描述这张图片的内容' },
+                                { type: 'text', text: '请详细描述这张图片的内容，包括：1. 主要物体和场景 2. 颜色和构图 3. 可能的含义或故事。请用中文回答。' },
                                 { type: 'image_url', image_url: { url: window.uploadedImageUrl } }
                             ]
-                        }]
+                        }],
+                        max_tokens: 1024
                     })
                 });
                 
+                console.log('📡 响应状态:', response.status);
+                
                 if (response.ok) {
                     const data = await response.json();
+                    console.log('✅ 识别结果:', data);
+                    
                     const result = data.choices[0].message.content;
-                    addMessage(result, 'bot');
+                    
+                    // 移除"正在识别"消息，显示结果
+                    const messages = document.querySelectorAll('.message.bot');
+                    const lastMessage = messages[messages.length - 1];
+                    if (lastMessage && lastMessage.textContent.includes('正在识别')) {
+                        lastMessage.innerHTML = `<strong>📸 图像识别结果：</strong><br><br>${result.replace(/\n/g, '<br>')}`;
+                    }
                 } else {
-                    throw new Error('图像识别失败');
+                    const errorData = await response.json();
+                    console.error('❌ API错误:', errorData);
+                    
+                    // 移除等待消息，显示错误
+                    const messages = document.querySelectorAll('.message.bot');
+                    const lastMessage = messages[messages.length - 1];
+                    if (lastMessage && lastMessage.textContent.includes('正在识别')) {
+                        lastMessage.innerHTML = `⚠️ 图像识别失败<br><br>错误: ${errorData.error?.message || '未知错误'}<br><br>请尝试：<br>1. 上传更清晰的图片<br>2. 检查网络连接<br>3. 稍后重试`;
+                    }
                 }
             } catch (error) {
-                console.error('错误:', error);
-                addMessage('图像识别失败，请重试', 'bot');
+                console.error('❌ 请求错误:', error);
+                
+                // 移除等待消息，显示错误
+                const messages = document.querySelectorAll('.message.bot');
+                const lastMessage = messages[messages.length - 1];
+                if (lastMessage && lastMessage.textContent.includes('正在识别')) {
+                    lastMessage.innerHTML = `❌ 网络请求失败<br><br>错误: ${error.message}<br><br>请检查网络连接后重试。`;
+                }
             }
         }
         
