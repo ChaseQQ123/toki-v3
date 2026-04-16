@@ -26,7 +26,7 @@ class PrivacyFilter {
     result = result.replace(/[\w.-]+@[\w.-]+\.\w+/g, '[邮箱]');
     
     // 地址（省市区路街号）- 注意不要匹配到"是"等字
-    result = result.replace(/[\u4e00-\u9fa5]{3,}(省|市|区|县|路|街|号|栋|单元|室|镇|乡|村)/g, '[地址]');
+    result = result.replace(/[\u4e00-\u9fa5]{2,}(省|市|区|县|路|街|号|栋|单元|室|镇|乡|村)/g, '[地址]');
     
     // 姓名（2-4 个中文字，前后不是中文或字母）
     result = result.replace(/(?<![a-zA-Z\u4e00-\u9fa5])[\u4e00-\u9fa5]{2,4}(?![a-zA-Z\u4e00-\u9fa5])/g, '[姓名]');
