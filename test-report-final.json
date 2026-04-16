@@ -1,0 +1,27 @@
+{
+  "timestamp": "2026-04-16T15:09:03.976Z",
+  "tests": [
+    {
+      "name": "核心文件检查",
+      "pass": true,
+      "message": "所有文件存在"
+    },
+    {
+      "name": "隐私脱敏测试",
+      "pass": false,
+      "message": "脱敏功能异常"
+    },
+    {
+      "name": "阿里云 API 测试",
+      "pass": true,
+      "message": "API 连接正常"
+    },
+    {
+      "name": "Git 部署检查",
+      "pass": true,
+      "message": "6f914ff 修复地址脱敏正则"
+    }
+  ],
+  "passed": 3,
+  "failed": 1
+}
