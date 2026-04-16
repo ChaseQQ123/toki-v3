@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOKI - 阿里云 API 测试</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .status-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+        }
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .status-item:last-child {
+            border-bottom: none;
+        }
+        .status-label {
+            color: #666;
+            font-weight: 500;
+        }
+        .status-value {
+            color: #333;
+            font-weight: 600;
+        }
+        .status-value.success { color: #28a745; }
+        .status-value.error { color: #dc3545; }
+        
+        .test-section {
+            margin-bottom: 30px;
+        }
+        .test-section h2 {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .test-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 15px;
+            margin-bottom: 12px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .test-input:focus {
+            border-color: #667eea;
+        }
+        .test-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102,126,234,0.4);
+        }
+        .test-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 15px;
+            display: none;
+        }
+        .result-card.show {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .result-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        .result-content {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #333;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 6px;
+            margin-bottom: 6px;
+        }
+        .tag-blue { background: #e3f2fd; color: #1976d2; }
+        .tag-green { background: #e8f5e9; color: #388e3c; }
+        .tag-purple { background: #f3e5f5; color: #7b1fa2; }
+        .tag-orange { background: #fff3e0; color: #f57c00; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 TOKI 阿里云 API 测试</h1>
+        <p class="subtitle">测试智能路由和模型调用功能</p>
+        
+        <!-- 状态卡片 -->
+        <div class="status-card">
+            <div class="status-item">
+                <span class="status-label">API 密钥状态</span>
+                <span class="status-value success" id="apiKeyStatus">✅ 已配置</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">API 地址</span>
+                <span class="status-value">https://dashscope.aliyuncs.com/api/v1</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">默认模型</span>
+                <span class="status-value">qwen-plus</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">成本优化</span>
+                <span class="status-value success">✅ 已启用</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">智能路由</span>
+                <span class="status-value success">✅ 已启用</span>
+            </div>
+        </div>
+        
+        <!-- 测试 1: 智能路由 -->
+        <div class="test-section">
+            <h2>🧠 测试 1: 智能路由</h2>
+            <input type="text" class="test-input" id="routeInput" placeholder="输入消息，查看路由选择..." value="帮我写一封邮件">
+            <button class="test-btn" onclick="testRoute()">测试路由</button>
+            
+            <div class="result-card" id="routeResult">
+                <div class="result-label">路由结果</div>
+                <div class="result-content" id="routeContent"></div>
+            </div>
+        </div>
+        
+        <!-- 测试 2: 文本对话 -->
+        <div class="test-section">
+            <h2>💬 测试 2: 文本对话</h2>
+            <input type="text" class="test-input" id="chatInput" placeholder="输入消息..." value="你好，我是 Tony">
+            <button class="test-btn" onclick="testChat()">发送消息</button>
+            
+            <div class="result-card" id="chatResult">
+                <div class="result-label">AI 回复</div>
+                <div class="result-content" id="chatContent"></div>
+            </div>
+        </div>
+        
+        <!-- 测试 3: 意图识别 -->
+        <div class="test-section">
+            <h2>🎯 测试 3: 意图识别</h2>
+            <div style="margin-bottom: 12px;">
+                <span class="tag tag-blue">chat</span>
+                <span class="tag tag-green">knowledge</span>
+                <span class="tag tag-purple">writing</span>
+                <span class="tag tag-orange">coding</span>
+            </div>
+            <input type="text" class="test-input" id="intentInput" placeholder="输入消息..." value="什么是量子力学？">
+            <button class="test-btn" onclick="testIntent()">测试意图识别</button>
+            
+            <div class="result-card" id="intentResult">
+                <div class="result-label">识别结果</div>
+                <div class="result-content" id="intentContent"></div>
+            </div>
+        </div>
+        
+        <!-- 测试 4: 路由统计 -->
+        <div class="test-section">
+            <h2>📊 测试 4: 路由统计</h2>
+            <button class="test-btn" onclick="showStats()">查看统计</button>
+            
+            <div class="result-card" id="statsResult">
+                <div class="result-label">统计数据</div>
+                <div class="result-content" id="statsContent"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="aliyun-client.js"></script>
+    <script>
+        // 检查配置
+        console.log('API Key:', CONFIG.aliyun.apiKey ? '已配置 ✅' : '未配置 ❌');
+        console.log('Base URL:', CONFIG.aliyun.baseUrl);
+        
+        // 测试路由
+        async function testRoute() {
+            const input = document.getElementById('routeInput').value;
+            const resultDiv = document.getElementById('routeResult');
+            const contentDiv = document.getElementById('routeContent');
+            
+            resultDiv.classList.add('show');
+            contentDiv.innerHTML = '<div class="loading"></div> 分析中...';
+            
+            const route = aliyunClient.selectModel(input);
+            
+            contentDiv.innerHTML = `
+                <div style="margin-bottom: 12px;">
+                    <strong>意图:</strong> ${route.intent} 
+                    <span class="tag tag-blue">${route.intent}</span>
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <strong>模型:</strong> <span class="tag tag-purple">${route.model}</span>
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <strong>复杂度:</strong> ${(route.complexity * 100).toFixed(0)}%
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <strong>原因:</strong> ${route.reason}
+                </div>
+                <div>
+                    <strong>置信度:</strong> ${route.score}
+                </div>
+            `;
+        }
+        
+        // 测试对话
+        async function testChat() {
+            const input = document.getElementById('chatInput').value;
+            const resultDiv = document.getElementById('chatResult');
+            const contentDiv = document.getElementById('chatContent');
+            const btn = event.target;
+            
+            resultDiv.classList.add('show');
+            contentDiv.innerHTML = '<div class="loading"></div> 思考中...';
+            btn.disabled = true;
+            
+            try {
+                const messages = [{ role: 'user', content: input }];
+                const response = await aliyunClient.chat(messages);
+                
+                contentDiv.innerHTML = `
+                    <div style="margin-bottom: 12px;">
+                        <strong>回复:</strong><br>
+                        ${response.content.replace(/\n/g, '<br>')}
+                    </div>
+                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e9ecef;">
+                        <strong>使用模型:</strong> <span class="tag tag-purple">${response.model}</span><br>
+                        <strong>意图:</strong> <span class="tag tag-blue">${response.route.intent}</span><br>
+                        <strong>复杂度:</strong> ${(response.route.complexity * 100).toFixed(0)}%
+                    </div>
+                `;
+            } catch (error) {
+                contentDiv.innerHTML = `<div style="color: #dc3545;">❌ 错误：${error.message}</div>`;
+            }
+            
+            btn.disabled = false;
+        }
+        
+        // 测试意图识别
+        function testIntent() {
+            const input = document.getElementById('intentInput').value;
+            const resultDiv = document.getElementById('intentResult');
+            const contentDiv = document.getElementById('intentContent');
+            
+            resultDiv.classList.add('show');
+            
+            const intent = aliyunClient.recognizeIntent(input);
+            
+            contentDiv.innerHTML = `
+                <div style="margin-bottom: 12px;">
+                    <strong>识别意图:</strong> 
+                    <span class="tag tag-blue">${intent.intent}</span>
+                </div>
+                <div>
+                    <strong>置信度:</strong> ${intent.confidence}
+                </div>
+            `;
+        }
+        
+        // 显示统计
+        function showStats() {
+            const resultDiv = document.getElementById('statsResult');
+            const contentDiv = document.getElementById('statsContent');
+            
+            resultDiv.classList.add('show');
+            
+            const stats = aliyunClient.getStats();
+            
+            contentDiv.innerHTML = `
+                <div style="margin-bottom: 12px;">
+                    <strong>总调用次数:</strong> ${stats.total}
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <strong>按意图分布:</strong><br>
+                    ${Object.entries(stats.byIntent).map(([k, v]) => 
+                        `<span class="tag tag-blue">${k}: ${v}</span>`
+                    ).join('')}
+                </div>
+                <div>
+                    <strong>按模型分布:</strong><br>
+                    ${Object.entries(stats.byModel).map(([k, v]) => 
+                        `<span class="tag tag-purple">${k}: ${v}</span>`
+                    ).join('')}
+                </div>
+            `;
+        }
+        
+        // 初始化
+        console.log('✅ 测试页面已加载');
+        console.log('阿里云客户端:', typeof aliyunClient !== 'undefined' ? '✅' : '❌');
+    </script>
+</body>
+</html>

@@ -1,0 +1,1395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TOKI V4.1 - 你的智能秘书</title>
+    
+    <!-- PWA 配置 -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#FF6B6B">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TOKI">
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        :root {
+            --primary: #FF6B6B;
+            --primary-dark: #EE5A5A;
+            --secondary: #4ECDC4;
+            --accent: #FFE66D;
+            --dark: #2C3E50;
+            --light: #F7F9FC;
+            --white: #FFFFFF;
+            --gray: #95A5A6;
+            --gray-light: #ECF0F1;
+            --shadow: 0 2px 12px rgba(0,0,0,0.08);
+            --shadow-lg: 0 4px 20px rgba(0,0,0,0.12);
+            --radius: 16px;
+            --radius-sm: 12px;
+            --radius-lg: 24px;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;
+            background: var(--light);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .app-container {
+            max-width: 480px;
+            margin: 0 auto;
+            background: var(--white);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        
+        /* ========== 头部 ========== */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: var(--white);
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: shimmer 3s infinite;
+        }
+        
+        @keyframes shimmer {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(-10%, -10%); }
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .logo-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .panda-avatar {
+            width: 50px;
+            height: 50px;
+            background: var(--white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .app-name {
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        
+        .app-slogan {
+            font-size: 13px;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-top: 8px;
+        }
+        
+        /* ========== 底部导航 ========== */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 480px;
+            background: var(--white);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0 calc(8px + env(safe-area-inset-bottom)) 0;
+            box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+            z-index: 100;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 12px;
+            color: var(--gray);
+            text-decoration: none;
+            transition: all 0.3s;
+            border-radius: var(--radius-sm);
+            min-width: 60px;
+            cursor: pointer;
+        }
+        
+        .nav-item.active {
+            color: var(--primary);
+            background: rgba(255,107,107,0.08);
+        }
+        
+        .nav-icon {
+            font-size: 22px;
+            transition: transform 0.3s;
+        }
+        
+        .nav-item.active .nav-icon {
+            transform: scale(1.1);
+        }
+        
+        .nav-label {
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        /* ========== 内容区域 ========== */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 80px;
+        }
+        
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* ========== 对话页面 ========== */
+        .chat-container {
+            padding: 20px;
+        }
+        
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .quick-action-card {
+            background: var(--white);
+            border: 2px solid var(--gray-light);
+            border-radius: var(--radius);
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .quick-action-card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow);
+            transform: translateY(-2px);
+        }
+        
+        .quick-action-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+        
+        .quick-action-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 4px;
+        }
+        
+        .quick-action-desc {
+            font-size: 12px;
+            color: var(--gray);
+        }
+        
+        /* 消息样式 */
+        .message-list {
+            margin-bottom: 20px;
+        }
+        
+        .message-wrapper {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        
+        .message-wrapper.user {
+            flex-direction: row-reverse;
+        }
+        
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+            box-shadow: var(--shadow);
+        }
+        
+        .avatar.bot {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        }
+        
+        .avatar.user {
+            background: linear-gradient(135deg, var(--secondary) 0%, #45B7AF 100%);
+        }
+        
+        .message {
+            max-width: 75%;
+            padding: 14px 18px;
+            border-radius: var(--radius-lg);
+            line-height: 1.6;
+            font-size: 15px;
+            box-shadow: var(--shadow);
+        }
+        
+        .message.bot {
+            background: var(--white);
+            color: var(--dark);
+            border-bottom-left-radius: 4px;
+        }
+        
+        .message.user {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: var(--white);
+            border-bottom-right-radius: 4px;
+        }
+        
+        .message-meta {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 4px;
+        }
+        
+        /* 输入区域 */
+        .input-area {
+            position: fixed;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 480px;
+            padding: 12px 20px;
+            background: var(--white);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+        }
+        
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+        
+        .message-input {
+            width: 100%;
+            padding: 14px 50px 14px 18px;
+            border: 2px solid var(--gray-light);
+            border-radius: 24px;
+            font-size: 15px;
+            outline: none;
+            transition: all 0.3s;
+            background: var(--light);
+        }
+        
+        .message-input:focus {
+            border-color: var(--primary);
+            background: var(--white);
+        }
+        
+        .voice-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: var(--primary);
+            color: var(--white);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .voice-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-50%) scale(1.05);
+        }
+        
+        .voice-btn.recording {
+            background: #E74C3C;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(231,76,60,0.4); }
+            50% { box-shadow: 0 0 0 12px rgba(231,76,60,0); }
+        }
+        
+        .send-btn {
+            width: 44px;
+            height: 44px;
+            border: none;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: var(--white);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.3s;
+            box-shadow: var(--shadow);
+        }
+        
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* 加载动画 */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 8px 0;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--gray);
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-8px); }
+        }
+        
+        /* ========== 智能体页面 ========== */
+        .agents-container {
+            padding: 20px;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--dark);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .agent-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+        
+        .agent-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 20px 16px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        .agent-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary);
+        }
+        
+        .agent-emoji {
+            font-size: 42px;
+            margin-bottom: 12px;
+        }
+        
+        .agent-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 6px;
+        }
+        
+        .agent-desc {
+            font-size: 12px;
+            color: var(--gray);
+            line-height: 1.5;
+        }
+        
+        /* ========== 工具页面 ========== */
+        .tools-container {
+            padding: 20px;
+        }
+        
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+        
+        .tool-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 20px 12px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .tool-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .tool-card.featured {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        }
+        
+        .tool-card.featured .tool-icon,
+        .tool-card.featured .tool-name {
+            color: var(--white);
+        }
+        
+        .tool-icon {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+        
+        .tool-name {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--dark);
+        }
+        
+        /* ========== 文件页面 ========== */
+        .files-container {
+            padding: 20px;
+        }
+        
+        .upload-area {
+            background: var(--white);
+            border: 3px dashed var(--gray-light);
+            border-radius: var(--radius);
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+        
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: rgba(255,107,107,0.05);
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+        
+        .upload-text {
+            font-size: 15px;
+            color: var(--gray);
+            margin-bottom: 8px;
+        }
+        
+        .upload-hint {
+            font-size: 12px;
+            color: var(--gray);
+            opacity: 0.7;
+        }
+        
+        .file-list {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 16px;
+            box-shadow: var(--shadow);
+        }
+        
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 8px;
+            background: var(--light);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .file-item:hover {
+            background: var(--gray-light);
+        }
+        
+        .file-icon {
+            font-size: 28px;
+        }
+        
+        .file-info {
+            flex: 1;
+        }
+        
+        .file-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--dark);
+            margin-bottom: 4px;
+        }
+        
+        .file-meta {
+            font-size: 11px;
+            color: var(--gray);
+        }
+        
+        /* ========== 我的页面 ========== */
+        .profile-container {
+            padding: 20px;
+        }
+        
+        .profile-header {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 30px 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 42px;
+            margin: 0 auto 16px;
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .profile-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--dark);
+            margin-bottom: 6px;
+        }
+        
+        .profile-level {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--secondary) 0%, #45B7AF 100%);
+            color: var(--white);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 12px;
+            background: var(--light);
+            border-radius: var(--radius-sm);
+        }
+        
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            color: var(--gray);
+        }
+        
+        .menu-list {
+            background: var(--white);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+        
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--gray-light);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .menu-item:last-child {
+            border-bottom: none;
+        }
+        
+        .menu-item:hover {
+            background: var(--light);
+        }
+        
+        .menu-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--light);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        
+        .menu-text {
+            flex: 1;
+            font-size: 15px;
+            color: var(--dark);
+        }
+        
+        .menu-arrow {
+            color: var(--gray);
+            font-size: 18px;
+        }
+        
+        /* ========== 响应式 ========== */
+        @media (max-width: 375px) {
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+            
+            .agent-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .tools-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 头部 -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <div class="panda-avatar">🐼</div>
+                    <div class="app-name">TOKI</div>
+                </div>
+                <div class="app-slogan">你的 24 小时智能秘书</div>
+                <div class="status-badge">
+                    <span id="systemStatus">🟢 系统正常</span>
+                </div>
+            </div>
+        </header>
+        
+        <!-- 内容区域 -->
+        <main class="content">
+            <!-- 💬 对话页面 -->
+            <div id="tab-chat" class="tab-content active">
+                <div class="chat-container">
+                    <!-- 快捷操作 -->
+                    <div class="quick-actions">
+                        <div class="quick-action-card" onclick="quickAsk('帮我写一封邮件')">
+                            <div class="quick-action-icon">📧</div>
+                            <div class="quick-action-title">写邮件</div>
+                            <div class="quick-action-desc">快速生成专业邮件</div>
+                        </div>
+                        <div class="quick-action-card" onclick="quickAsk('帮我制定今天的工作计划')">
+                            <div class="quick-action-icon">📅</div>
+                            <div class="quick-action-title">日程安排</div>
+                            <div class="quick-action-desc">智能规划时间</div>
+                        </div>
+                        <div class="quick-action-card" onclick="quickAsk('帮我总结一下这篇文章')">
+                            <div class="quick-action-icon">📄</div>
+                            <div class="quick-action-title">文档总结</div>
+                            <div class="quick-action-desc">快速提取要点</div>
+                        </div>
+                        <div class="quick-action-card" onclick="quickAsk('帮我翻译这段话')">
+                            <div class="quick-action-icon">🌐</div>
+                            <div class="quick-action-title">翻译</div>
+                            <div class="quick-action-desc">多语言互译</div>
+                        </div>
+                    </div>
+                    
+                    <!-- PDF 工具集 -->
+                    <div class="section-title" style="margin-top: 24px;">
+                        <span>📎</span> PDF 工具集
+                    </div>
+                    <div class="quick-actions" style="margin-top: 12px;">
+                        <div class="quick-action-card" onclick="openTool('ppt')">
+                            <div class="quick-action-icon">📊</div>
+                            <div class="quick-action-title">PPT 制作</div>
+                            <div class="quick-action-desc">AI 一键生成演示文稿</div>
+                        </div>
+                        <div class="quick-action-card" onclick="openTool('word2pdf')">
+                            <div class="quick-action-icon">📝</div>
+                            <div class="quick-action-title">Word 转 PDF</div>
+                            <div class="quick-action-desc">文档格式转换</div>
+                        </div>
+                        <div class="quick-action-card" onclick="openTool('photo2pdf')">
+                            <div class="quick-action-icon">🖼️</div>
+                            <div class="quick-action-title">照片转 PDF</div>
+                            <div class="quick-action-desc">图片合并为 PDF</div>
+                        </div>
+                        <div class="quick-action-card" onclick="openTool('scan')">
+                            <div class="quick-action-icon">📷</div>
+                            <div class="quick-action-title">扫描成 PDF</div>
+                            <div class="quick-action-desc">智能裁剪增强</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 消息列表 -->
+                    <div class="message-list" id="messageList">
+                        <div class="message-wrapper">
+                            <div class="avatar bot">🐼</div>
+                            <div class="message bot">
+                                你好呀！我是 TOKI，你的智能秘书 👋<br><br>
+                                我可以帮你：
+                                <br>• 💬 聊天问答
+                                <br>• 📅 管理日程
+                                <br>• 📸 识别图片
+                                <br>• 📄 处理文档
+                                <br><br>
+                                有什么可以帮你的吗？
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 🤖 智能体页面 -->
+            <div id="tab-agents" class="tab-content">
+                <div class="agents-container">
+                    <div class="section-title">
+                        <span>🤖</span> 专业助手
+                    </div>
+                    <div class="agent-grid">
+                        <div class="agent-card" onclick="selectAgent('数据分析师')">
+                            <div class="agent-emoji">📊</div>
+                            <div class="agent-name">数据分析师</div>
+                            <div class="agent-desc">数据分析、图表生成、趋势洞察</div>
+                        </div>
+                        <div class="agent-card" onclick="selectAgent('商务助手')">
+                            <div class="agent-emoji">💼</div>
+                            <div class="agent-name">商务助手</div>
+                            <div class="agent-desc">商业文档、报告撰写、方案策划</div>
+                        </div>
+                        <div class="agent-card" onclick="selectAgent('学习导师')">
+                            <div class="agent-emoji">📚</div>
+                            <div class="agent-name">学习导师</div>
+                            <div class="agent-desc">知识讲解、学习计划、答疑解惑</div>
+                        </div>
+                        <div class="agent-card" onclick="selectAgent('设计师助手')">
+                            <div class="agent-emoji">🎨</div>
+                            <div class="agent-name">设计师助手</div>
+                            <div class="agent-desc">设计建议、配色方案、创意灵感</div>
+                        </div>
+                        <div class="agent-card" onclick="selectAgent('写作伙伴')">
+                            <div class="agent-emoji">✍️</div>
+                            <div class="agent-name">写作伙伴</div>
+                            <div class="agent-desc">文章创作、文案优化、润色编辑</div>
+                        </div>
+                        <div class="agent-card" onclick="selectAgent('编程助手')">
+                            <div class="agent-emoji">💻</div>
+                            <div class="agent-name">编程助手</div>
+                            <div class="agent-desc">代码编写、技术解答、Debug</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 🛠️ 工具页面 -->
+            <div id="tab-tools" class="tab-content">
+                <div class="tools-container">
+                    <div class="section-title">
+                        <span>🛠️</span> 实用工具
+                    </div>
+                    <div class="tools-grid">
+                        <div class="tool-card featured" onclick="openTool('voice')">
+                            <div class="tool-icon">🎤</div>
+                            <div class="tool-name">语音助手</div>
+                        </div>
+                        <div class="tool-card featured" onclick="openTool('ppt')">
+                            <div class="tool-icon">📊</div>
+                            <div class="tool-name">PPT 制作</div>
+                        </div>
+                        <div class="tool-card" onclick="openTool('word2pdf')">
+                            <div class="tool-icon">📝</div>
+                            <div class="tool-name">Word 转 PDF</div>
+                        </div>
+                        <div class="tool-card" onclick="openTool('photo2pdf')">
+                            <div class="tool-icon">🖼️</div>
+                            <div class="tool-name">照片转 PDF</div>
+                        </div>
+                        <div class="tool-card" onclick="openTool('scan')">
+                            <div class="tool-icon">📷</div>
+                            <div class="tool-name">扫描王</div>
+                        </div>
+                        <div class="tool-card" onclick="openTool('weather')">
+                            <div class="tool-icon">🌤️</div>
+                            <div class="tool-name">天气查询</div>
+                        </div>
+                        <div class="tool-card" onclick="openTool('search')">
+                            <div class="tool-icon">🔍</div>
+                            <div class="tool-name">智能搜索</div>
+                        </div>
+                        <div class="tool-card" onclick="openTool('translate')">
+                            <div class="tool-icon">🌐</div>
+                            <div class="tool-name">翻译</div>
+                        </div>
+                        <div class="tool-card" onclick="openTool('calendar')">
+                            <div class="tool-icon">📅</div>
+                            <div class="tool-name">日历</div>
+                        </div>
+                        <div class="tool-card" onclick="openTool('calculator')">
+                            <div class="tool-icon">🧮</div>
+                            <div class="tool-name">计算器</div>
+                        </div>
+                        <div class="tool-card" onclick="openTool('chart')">
+                            <div class="tool-icon">📊</div>
+                            <div class="tool-name">图表生成</div>
+                        </div>
+                        <div class="tool-card" onclick="openTool('image')">
+                            <div class="tool-icon">🎨</div>
+                            <div class="tool-name">图像生成</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 📤 文件页面 -->
+            <div id="tab-files" class="tab-content">
+                <div class="files-container">
+                    <div class="section-title">
+                        <span>📤</span> 文件管理
+                    </div>
+                    
+                    <!-- 上传区域 -->
+                    <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                        <div class="upload-icon">📁</div>
+                        <div class="upload-text">点击上传文件</div>
+                        <div class="upload-hint">支持图片、PDF、Word、Excel</div>
+                        <input type="file" id="fileInput" style="display: none" multiple onchange="handleFileSelect(event)">
+                    </div>
+                    
+                    <!-- 文件列表 -->
+                    <div class="file-list">
+                        <div class="file-item">
+                            <div class="file-icon">📄</div>
+                            <div class="file-info">
+                                <div class="file-name">会议纪要.docx</div>
+                                <div class="file-meta">2.3 MB · 今天 10:30</div>
+                            </div>
+                        </div>
+                        <div class="file-item">
+                            <div class="file-icon">📊</div>
+                            <div class="file-info">
+                                <div class="file-name">销售报表.xlsx</div>
+                                <div class="file-meta">1.8 MB · 昨天</div>
+                            </div>
+                        </div>
+                        <div class="file-item">
+                            <div class="file-icon">🖼️</div>
+                            <div class="file-info">
+                                <div class="file-name">产品照片.jpg</div>
+                                <div class="file-meta">3.5 MB · 3 天前</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 👤 我的页面 -->
+            <div id="tab-profile" class="tab-content">
+                <div class="profile-container">
+                    <!-- 个人信息 -->
+                    <div class="profile-header">
+                        <div class="profile-avatar">👤</div>
+                        <div class="profile-name">Tony</div>
+                        <div class="profile-level">✨ 尊享会员</div>
+                        
+                        <div class="stats-grid" id="profileStats">
+                            <div class="stat-item">
+                                <div class="stat-value" id="statTotal">0</div>
+                                <div class="stat-label">对话次数</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="statDays">0</div>
+                                <div class="stat-label">使用天数</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="statMemory">0</div>
+                                <div class="stat-label">记忆条数</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 菜单列表 -->
+                    <div class="menu-list">
+                        <div class="menu-item" onclick="showSystemInfo()">
+                            <div class="menu-icon">ℹ️</div>
+                            <div class="menu-text">系统信息</div>
+                            <div class="menu-arrow">›</div>
+                        </div>
+                        <div class="menu-item" onclick="clearMemory()">
+                            <div class="menu-icon">🗑️</div>
+                            <div class="menu-text">清除记忆</div>
+                            <div class="menu-arrow">›</div>
+                        </div>
+                        <div class="menu-item">
+                            <div class="menu-icon">💎</div>
+                            <div class="menu-text">会员中心</div>
+                            <div class="menu-arrow">›</div>
+                        </div>
+                        <div class="menu-item">
+                            <div class="menu-icon">⚙️</div>
+                            <div class="menu-text">设置</div>
+                            <div class="menu-arrow">›</div>
+                        </div>
+                        <div class="menu-item">
+                            <div class="menu-icon">❓</div>
+                            <div class="menu-text">帮助与反馈</div>
+                            <div class="menu-arrow">›</div>
+                        </div>
+                        <div class="menu-item">
+                            <div class="menu-icon">📋</div>
+                            <div class="menu-text">关于我们</div>
+                            <div class="menu-arrow">›</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- 输入区域（仅对话页面显示） -->
+        <div class="input-area" id="inputArea">
+            <div class="input-wrapper">
+                <input type="text" class="message-input" id="messageInput" placeholder="输入消息..." onkeypress="handleKeyPress(event)">
+                <button class="voice-btn" id="voiceBtn" onclick="toggleVoice()">🎤</button>
+            </div>
+            <button class="send-btn" onclick="sendMessage()">➤</button>
+        </div>
+        
+        <!-- 底部导航 -->
+        <nav class="bottom-nav">
+            <a href="#" class="nav-item active" data-tab="chat" onclick="switchTab(event, 'chat')">
+                <div class="nav-icon">💬</div>
+                <div class="nav-label">对话</div>
+            </a>
+            <a href="#" class="nav-item" data-tab="agents" onclick="switchTab(event, 'agents')">
+                <div class="nav-icon">🤖</div>
+                <div class="nav-label">智能体</div>
+            </a>
+            <a href="#" class="nav-item" data-tab="tools" onclick="switchTab(event, 'tools')">
+                <div class="nav-icon">🛠️</div>
+                <div class="nav-label">工具</div>
+            </a>
+            <a href="#" class="nav-item" data-tab="files" onclick="switchTab(event, 'files')">
+                <div class="nav-icon">📤</div>
+                <div class="nav-label">文件</div>
+            </a>
+            <a href="#" class="nav-item" data-tab="profile" onclick="switchTab(event, 'profile')">
+                <div class="nav-icon">👤</div>
+                <div class="nav-label">我的</div>
+            </a>
+        </nav>
+    </div>
+    
+    <!-- 集成脚本 -->
+    <script src="aliyun-client.js"></script>
+    <script src="tokiclaw-integration.js"></script>
+    
+    <script>
+        // ============ 全局状态 ============
+        let chatHistory = [];
+        let isWaitingResponse = false;
+        let tokiCore = null;
+        
+        // ============ 初始化 ============
+        async function initApp() {
+            console.log('🚀 TOKI V4.1 启动中...');
+            
+            // 检查阿里云客户端
+            if (typeof aliyunClient !== 'undefined') {
+                console.log('✅ 阿里云 API 客户端已加载');
+                document.getElementById('systemStatus').textContent = '🟢 系统正常';
+            } else {
+                console.error('❌ 阿里云 API 客户端未加载');
+                document.getElementById('systemStatus').textContent = '🔴 API 未连接';
+            }
+            
+            // 初始化 TOKIClaw 核心
+            try {
+                tokiCore = new TOKIClawCore({
+                    userId: 'tony',
+                    userName: 'Tony',
+                    memory: { maxMessages: 100 },
+                    router: typeof aliyunClient !== 'undefined' ? aliyunClient : null
+                });
+                
+                await tokiCore.init();
+                console.log('✅ TOKIClaw 核心已初始化');
+                
+                // 更新统计数据
+                updateProfileStats();
+                
+            } catch (e) {
+                console.error('TOKIClaw 初始化失败:', e);
+            }
+            
+            console.log('🎉 TOKI V4.1 准备就绪');
+        }
+        
+        // ============ 核心功能 ============
+        
+        // 标签页切换
+        function switchTab(e, tabName) {
+            e.preventDefault();
+            
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.dataset.tab === tabName) {
+                    item.classList.add('active');
+                }
+            });
+            
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById('tab-' + tabName).classList.add('active');
+            
+            const inputArea = document.getElementById('inputArea');
+            if (tabName === 'chat') {
+                inputArea.style.display = 'flex';
+            } else {
+                inputArea.style.display = 'none';
+            }
+        }
+        
+        // 发送消息（接入阿里云 API + TOKIClaw）
+        async function sendMessage() {
+            if (isWaitingResponse) return;
+            
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            addMessage(message, 'user');
+            input.value = '';
+            
+            showTypingIndicator();
+            isWaitingResponse = true;
+            
+            try {
+                // 使用 TOKIClaw 处理（包含记忆、DNA 等）
+                if (tokiCore) {
+                    const response = await tokiCore.processMessage(message, {
+                        chatFunction: async (msg, options) => {
+                            const messages = [
+                                { role: 'system', content: '你是 TOKI，一个智能、友好、乐于助人的 AI 助手。你是 Tony 的 24 小时智能秘书。' },
+                                ...chatHistory,
+                                { role: 'user', content: msg }
+                            ];
+                            return await aliyunClient.chat(messages, options);
+                        }
+                    });
+                    
+                    removeTypingIndicator();
+                    addMessage(response.content, 'bot', response.model);
+                    chatHistory.push({ role: 'assistant', content: response.content });
+                    
+                    console.log('🧠 路由:', response.route?.intent, '→', response.model);
+                    console.log('⏱️ 响应时间:', response.responseTime, 'ms');
+                    
+                } else {
+                    // 降级方案：直接使用阿里云 API
+                    const messages = [
+                        { role: 'system', content: '你是 TOKI，Tony 的智能秘书' },
+                        ...chatHistory,
+                        { role: 'user', content: message }
+                    ];
+                    
+                    const response = await aliyunClient.chat(messages);
+                    removeTypingIndicator();
+                    addMessage(response.content, 'bot', response.model);
+                    chatHistory.push({ role: 'assistant', content: response.content });
+                }
+                
+            } catch (error) {
+                removeTypingIndicator();
+                addMessage('抱歉，网络开小差了，请稍后再试。', 'bot');
+                console.error('API 调用失败:', error);
+            }
+            
+            isWaitingResponse = false;
+            updateProfileStats();
+        }
+        
+        // 添加消息到聊天
+        function addMessage(text, type, model) {
+            const messageList = document.getElementById('messageList');
+            const wrapper = document.createElement('div');
+            wrapper.className = 'message-wrapper ' + type;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'avatar ' + type;
+            avatar.textContent = type === 'bot' ? '🐼' : '👤';
+            
+            const message = document.createElement('div');
+            message.className = 'message ' + type;
+            message.innerHTML = text.replace(/\n/g, '<br>');
+            
+            if (model) {
+                const meta = document.createElement('div');
+                meta.className = 'message-meta';
+                meta.textContent = model;
+                message.appendChild(meta);
+            }
+            
+            if (type === 'user') {
+                wrapper.appendChild(message);
+                wrapper.appendChild(avatar);
+            } else {
+                wrapper.appendChild(avatar);
+                wrapper.appendChild(message);
+            }
+            
+            messageList.appendChild(wrapper);
+            messageList.scrollTop = messageList.scrollHeight;
+        }
+        
+        // 快捷提问
+        function quickAsk(question) {
+            document.getElementById('messageInput').value = question;
+            sendMessage();
+        }
+        
+        // 选择智能体
+        async function selectAgent(agentName) {
+            switchToChat();
+            
+            const prompt = `我想切换到${agentName}模式，请用这个身份和我对话`;
+            addMessage(prompt, 'user');
+            
+            showTypingIndicator();
+            isWaitingResponse = true;
+            
+            try {
+                const messages = [
+                    { role: 'system', content: `你是 TOKI，现在是${agentName}角色。请用专业、友好的方式帮助用户。` },
+                    ...chatHistory,
+                    { role: 'user', content: prompt }
+                ];
+                
+                const response = await aliyunClient.chat(messages);
+                removeTypingIndicator();
+                
+                addMessage(response.content, 'bot', response.model);
+                chatHistory.push({ role: 'assistant', content: response.content });
+                
+            } catch (error) {
+                removeTypingIndicator();
+                addMessage('抱歉，切换失败了，请重试。', 'bot');
+                console.error('智能体切换失败:', error);
+            }
+            
+            isWaitingResponse = false;
+        }
+        
+        // 打开工具
+        function openTool(toolName) {
+            if (['ppt', 'word2pdf', 'photo2pdf', 'scan'].includes(toolName)) {
+                window.location.href = 'pdf-tools.html';
+            } else {
+                alert('工具 "' + toolName + '" 开发中...');
+            }
+        }
+        
+        // 文件选择
+        function handleFileSelect(event) {
+            const files = event.target.files;
+            if (files.length > 0) {
+                alert('已选择 ' + files.length + ' 个文件，上传功能开发中...');
+            }
+        }
+        
+        // 回车发送
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        // 语音输入
+        let isRecording = false;
+        function toggleVoice() {
+            const btn = document.getElementById('voiceBtn');
+            isRecording = !isRecording;
+            
+            if (isRecording) {
+                btn.classList.add('recording');
+                btn.textContent = '🔴';
+            } else {
+                btn.classList.remove('recording');
+                btn.textContent = '🎤';
+                addMessage('[语音消息] 语音转文字功能开发中...', 'user');
+            }
+        }
+        
+        // 切换到对话页面
+        function switchToChat() {
+            const chatTab = document.querySelector('[data-tab="chat"]');
+            if (chatTab) {
+                chatTab.click();
+            }
+        }
+        
+        // 显示正在输入
+        function showTypingIndicator() {
+            const messageList = document.getElementById('messageList');
+            const wrapper = document.createElement('div');
+            wrapper.className = 'message-wrapper bot';
+            wrapper.id = 'typingIndicator';
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'avatar bot';
+            avatar.textContent = '🐼';
+            
+            const indicator = document.createElement('div');
+            indicator.className = 'message bot';
+            indicator.innerHTML = `
+                <div class="typing-indicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            `;
+            
+            wrapper.appendChild(avatar);
+            wrapper.appendChild(indicator);
+            messageList.appendChild(wrapper);
+            messageList.scrollTop = messageList.scrollHeight;
+        }
+        
+        // 移除正在输入
+        function removeTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+        
+        // 更新统计数据
+        function updateProfileStats() {
+            if (tokiCore && tokiCore.memory) {
+                const stats = tokiCore.memory.getStats();
+                document.getElementById('statTotal').textContent = stats.assistant || 0;
+                document.getElementById('statMemory').textContent = stats.total || 0;
+                
+                // 估算使用天数（简单算法）
+                const days = Math.max(1, Math.ceil(stats.total / 10));
+                document.getElementById('statDays').textContent = days;
+            }
+        }
+        
+        // 显示系统信息
+        function showSystemInfo() {
+            const info = `
+TOKI V4.1 系统信息
+
+✅ 阿里云 API: ${typeof aliyunClient !== 'undefined' ? '已连接' : '未连接'}
+✅ TOKIClaw: ${tokiCore ? '已初始化' : '未初始化'}
+📊 记忆条数：${tokiCore?.memory?.messages?.length || 0}
+🧬 DNA 版本：${tokiCore?.dna?.version || 1}
+            `.trim();
+            
+            alert(info);
+        }
+        
+        // 清除记忆
+        async function clearMemory() {
+            if (confirm('确定要清除所有对话记忆吗？此操作不可恢复。')) {
+                if (tokiCore) {
+                    await tokiCore.clearMemory();
+                    chatHistory = [];
+                    document.getElementById('messageList').innerHTML = '';
+                    alert('记忆已清除 ✅');
+                    updateProfileStats();
+                }
+            }
+        }
+        
+        // 启动应用
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
