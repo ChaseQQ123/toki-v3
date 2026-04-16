@@ -55,7 +55,7 @@ class AliyunBrowserClient {
   }
   
   isSimpleChat(msg) {
-    return /你好 | 您好|hello|hi|在吗 | 谢谢 | 再见/i.test(msg) && msg.length < 20;
+    return /^(你好 | 您好|hello|hi|hey|在吗 | 谢谢 | 再见)/i.test(msg) && msg.length < 15;
   }
   
   isKnowledge(msg) {

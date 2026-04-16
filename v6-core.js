@@ -13,20 +13,20 @@ class PrivacyFilter {
     
     let result = text;
     
-    // 手机号：138****5678
+    // 手机号：先替换手机号（避免被地址匹配）
     result = result.replace(/1[3-9]\d{9}/g, '[手机号]');
     
-    // 身份证：110101********1234
-    result = result.replace(/\b\d{6}(\d{8})\d{4}[\dXx]?\b/g, '[身份证]');
+    // 身份证
+    result = result.replace(/\b\d{6}\d{8}\d{4}[\dXx]?\b/g, '[身份证]');
     
-    // 银行卡：6222 **** **** 1234
+    // 银行卡
     result = result.replace(/\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g, '[银行卡]');
     
     // 邮箱
     result = result.replace(/[\w.-]+@[\w.-]+\.\w+/g, '[邮箱]');
     
-    // 地址（省市区路街号）
-    result = result.replace(/[\u4e00-\u9fa5]{2,}(省|市|区|县|路|街|号|栋|单元|室|镇|乡|村)/g, '[地址]');
+    // 地址（省市区路街号）- 注意不要匹配到"是"等字
+    result = result.replace(/[\u4e00-\u9fa5]{3,}(省|市|区|县|路|街|号|栋|单元|室|镇|乡|村)/g, '[地址]');
     
     // 姓名（2-4 个中文字，前后不是中文或字母）
     result = result.replace(/(?<![a-zA-Z\u4e00-\u9fa5])[\u4e00-\u9fa5]{2,4}(?![a-zA-Z\u4e00-\u9fa5])/g, '[姓名]');
