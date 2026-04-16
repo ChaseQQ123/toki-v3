@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOKI V6 - 功能测试页面 V2</title>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container { max-width: 1000px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 30px; color: #333; }
+        
+        .test-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .test-title { font-size: 18px; font-weight: bold; color: #333; }
+        
+        .test-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        
+        .status-pending { background: #ffc107; color: #000; }
+        .status-testing { background: #17a2b8; color: #fff; }
+        .status-pass { background: #28a745; color: #fff; }
+        .status-fail { background: #dc3545; color: #fff; }
+        
+        .test-content {
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 10px;
+            min-height: 100px;
+        }
+        
+        .test-log {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.8;
+            color: #555;
+            white-space: pre-wrap;
+        }
+        
+        .log-success { color: #28a745; }
+        .log-error { color: #dc3545; }
+        .log-info { color: #17a2b8; }
+        .log-warn { color: #ffc107; }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #f0f0f0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+            transition: width 0.5s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .summary-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .summary-value { font-size: 36px; font-weight: bold; margin-bottom: 5px; }
+        .summary-label { font-size: 14px; color: #666; }
+        
+        .error-detail {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 TOKI V6 功能测试 V2</h1>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressBar" style="width: 0%">0%</div>
+        </div>
+        
+        <div class="summary">
+            <div class="summary-card">
+                <div class="summary-value" id="totalTests">0</div>
+                <div class="summary-label">总测试数</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-value" id="passedTests" style="color: #28a745;">0</div>
+                <div class="summary-label">通过</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-value" id="failedTests" style="color: #dc3545;">0</div>
+                <div class="summary-label">失败</div>
+            </div>
+        </div>
+        
+        <div id="testContainer"></div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <button class="btn btn-primary" onclick="runAllTests()">▶️ 运行全部测试</button>
+            <button class="btn btn-primary" onclick="location.reload()">🔄 刷新页面</button>
+        </div>
+    </div>
+    
+    <script src="v6-core.js"></script>
+    <script src="aliyun-browser.js"></script>
+    
+    <script>
+        const testResults = { total: 0, passed: 0, failed: 0, tests: [] };
+        
+        const testCases = [
+            { id: 'v6-core', name: 'V6 核心初始化', test: testV6Core },
+            { id: 'memory-store', name: '记忆存储系统', test: testMemoryStore },
+            { id: 'dna-system', name: 'DNA 学习系统', test: testDNASystem },
+            { id: 'privacy-filter', name: '隐私脱敏过滤器', test: testPrivacyFilter },
+            { id: 'security-encrypt', name: '安全加密系统', test: testSecurityEncrypt },
+            { id: 'aliyun-chat', name: '阿里云文本对话', test: testAliyunChat },
+            { id: 'aliyun-vision', name: '阿里云图像识别', test: testAliyunVision },
+            { id: 'smart-router', name: '智能路由系统', test: testSmartRouter }
+        ];
+        
+        function createTestInterface() {
+            const container = document.getElementById('testContainer');
+            testCases.forEach(tc => {
+                const section = document.createElement('div');
+                section.className = 'test-section';
+                section.id = `section-${tc.id}`;
+                section.innerHTML = `
+                    <div class="test-header">
+                        <div class="test-title">${tc.name}</div>
+                        <div class="test-status status-pending" id="status-${tc.id}">待测试</div>
+                    </div>
+                    <div class="test-content">
+                        <div class="test-log" id="log-${tc.id}">等待测试...</div>
+                    </div>
+                `;
+                container.appendChild(section);
+            });
+        }
+        
+        function updateStatus(testId, status, logs = []) {
+            const statusEl = document.getElementById(`status-${testId}`);
+            const logEl = document.getElementById(`log-${testId}`);
+            
+            statusEl.className = `test-status status-${status}`;
+            statusEl.textContent = status === 'pass' ? '✅ 通过' : 
+                                   status === 'fail' ? '❌ 失败' : 
+                                   status === 'testing' ? '⏳ 测试中' : '待测试';
+            
+            logEl.innerHTML = logs.map(log => {
+                const cls = log.type === 'success' ? 'log-success' :
+                           log.type === 'error' ? 'log-error' :
+                           log.type === 'warn' ? 'log-warn' : 'log-info';
+                return `<div class="${cls}">${log.message}</div>`;
+            }).join('');
+        }
+        
+        function updateProgress() {
+            const completed = testResults.passed + testResults.failed;
+            const percent = testResults.total > 0 ? Math.round((completed / testResults.total) * 100) : 0;
+            
+            document.getElementById('progressBar').style.width = percent + '%';
+            document.getElementById('progressBar').textContent = percent + '%';
+            document.getElementById('totalTests').textContent = testResults.total;
+            document.getElementById('passedTests').textContent = testResults.passed;
+            document.getElementById('failedTests').textContent = testResults.failed;
+        }
+        
+        async function runAllTests() {
+            console.clear();
+            console.log('🚀 开始运行所有测试...\n');
+            
+            testResults.total = testCases.length;
+            testResults.passed = 0;
+            testResults.failed = 0;
+            testResults.tests = [];
+            updateProgress();
+            
+            for (const tc of testCases) {
+                updateStatus(tc.id, 'testing', [{ type: 'info', message: '开始测试...' }]);
+                
+                try {
+                    const result = await tc.test();
+                    
+                    if (result.pass) {
+                        testResults.passed++;
+                        updateStatus(tc.id, 'pass', result.logs);
+                        console.log(`✅ 通过：${tc.name}`);
+                    } else {
+                        testResults.failed++;
+                        updateStatus(tc.id, 'fail', result.logs);
+                        console.error(`❌ 失败：${tc.name}`);
+                    }
+                    
+                    testResults.tests.push({ id: tc.id, name: tc.name, ...result });
+                    
+                } catch (e) {
+                    testResults.failed++;
+                    updateStatus(tc.id, 'fail', [{
+                        type: 'error',
+                        message: `测试异常：${e.message}\n${e.stack}`
+                    }]);
+                    console.error(`❌ 异常：${tc.name}`, e);
+                    
+                    testResults.tests.push({
+                        id: tc.id,
+                        name: tc.name,
+                        pass: false,
+                        logs: [{ type: 'error', message: e.message }]
+                    });
+                }
+                
+                updateProgress();
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            console.log('\n' + '='.repeat(60));
+            console.log('📊 测试结果总结');
+            console.log('='.repeat(60));
+            console.log(`总计：${testResults.total}`);
+            console.log(`通过：${testResults.passed} ✅`);
+            console.log(`失败：${testResults.failed} ❌`);
+            console.log('='.repeat(60));
+        }
+        
+        // ========== 测试用例 ==========
+        
+        async function testV6Core() {
+            const logs = [];
+            try {
+                logs.push({ type: 'info', message: '检查全局变量...' });
+                
+                if (typeof initTOKIV6 !== 'function') {
+                    logs.push({ type: 'error', message: '❌ initTOKIV6 函数不存在' });
+                    logs.push({ type: 'warn', message: '可能 v6-core.js 未正确加载' });
+                    return { pass: false, logs };
+                }
+                
+                logs.push({ type: 'info', message: '调用 initTOKIV6...' });
+                const success = await initTOKIV6();
+                
+                if (success) {
+                    logs.push({ type: 'success', message: '✅ V6 核心初始化成功' });
+                    
+                    if (window.security) logs.push({ type: 'success', message: '✅ SecurityManager 已加载' });
+                    else logs.push({ type: 'warn', message: '⚠️ SecurityManager 未加载' });
+                    
+                    if (window.memoryStore) logs.push({ type: 'success', message: '✅ JSONLStore 已加载' });
+                    else logs.push({ type: 'warn', message: '⚠️ JSONLStore 未加载' });
+                    
+                    if (window.dnaSystem) logs.push({ type: 'success', message: '✅ DNASystem 已加载' });
+                    else logs.push({ type: 'warn', message: '⚠️ DNASystem 未加载' });
+                    
+                    return { pass: true, logs };
+                } else {
+                    logs.push({ type: 'error', message: '❌ initTOKIV6 返回 false' });
+                    return { pass: false, logs };
+                }
+            } catch (e) {
+                logs.push({ type: 'error', message: `❌ 初始化失败：${e.message}\n${e.stack}` });
+                return { pass: false, logs };
+            }
+        }
+        
+        async function testMemoryStore() {
+            const logs = [];
+            try {
+                if (!window.memoryStore) {
+                    logs.push({ type: 'error', message: '❌ memoryStore 未定义' });
+                    return { pass: false, logs };
+                }
+                
+                logs.push({ type: 'info', message: '测试添加消息...' });
+                await memoryStore.add({
+                    role: 'user',
+                    content: '测试消息 ' + Date.now(),
+                    timestamp: Date.now()
+                });
+                logs.push({ type: 'success', message: '✅ 消息添加成功' });
+                
+                logs.push({ type: 'info', message: '测试获取历史...' });
+                const history = await memoryStore.getHistory(10);
+                logs.push({ type: 'success', message: `✅ 获取到 ${history.length} 条消息` });
+                
+                const stats = await memoryStore.getStats();
+                logs.push({ type: 'success', message: `✅ 统计：总计 ${stats.total} 条` });
+                
+                return { pass: true, logs };
+            } catch (e) {
+                logs.push({ type: 'error', message: `❌ 记忆存储测试失败：${e.message}\n${e.stack}` });
+                return { pass: false, logs };
+            }
+        }
+        
+        async function testDNASystem() {
+            const logs = [];
+            try {
+                if (!window.dnaSystem) {
+                    logs.push({ type: 'error', message: '❌ dnaSystem 未定义' });
+                    logs.push({ type: 'warn', message: '请确认 V6 核心已初始化' });
+                    return { pass: false, logs };
+                }
+                
+                logs.push({ type: 'info', message: '测试 DNA 学习...' });
+                await dnaSystem.learn('我喜欢编程', '编程很有趣');
+                logs.push({ type: 'success', message: '✅ DNA 学习成功' });
+                
+                const exportData = dnaSystem.export();
+                logs.push({ type: 'success', message: `✅ DNA 版本：${exportData.version}` });
+                
+                const prefCount = exportData.chromosomes.preferences ? 
+                                  Object.keys(exportData.chromosomes.preferences).length : 0;
+                logs.push({ type: 'success', message: `✅ 偏好数：${prefCount}` });
+                
+                return { pass: true, logs };
+            } catch (e) {
+                logs.push({ type: 'error', message: `❌ DNA 系统测试失败：${e.message}\n${e.stack}` });
+                logs.push({ type: 'warn', message: '可能原因：V6 核心未初始化或 IndexedDB 不可用' });
+                return { pass: false, logs };
+            }
+        }
+        
+        async function testPrivacyFilter() {
+            const logs = [];
+            try {
+                if (!window.PrivacyFilter) {
+                    logs.push({ type: 'error', message: '❌ PrivacyFilter 未定义' });
+                    return { pass: false, logs };
+                }
+                
+                logs.push({ type: 'info', message: '测试手机号脱敏...' });
+                const test1 = PrivacyFilter.sanitize('我的手机号是 13812345678');
+                if (test1.includes('[手机号]')) {
+                    logs.push({ type: 'success', message: `✅ 手机号脱敏成功：${test1}` });
+                } else {
+                    logs.push({ type: 'error', message: `❌ 手机号脱敏失败：${test1}` });
+                }
+                
+                logs.push({ type: 'info', message: '测试地址脱敏...' });
+                const test2 = PrivacyFilter.sanitize('我住在北京朝阳区');
+                if (test2.includes('[地址]')) {
+                    logs.push({ type: 'success', message: `✅ 地址脱敏成功：${test2}` });
+                } else {
+                    logs.push({ type: 'error', message: `❌ 地址脱敏失败：${test2}` });
+                }
+                
+                logs.push({ type: 'info', message: '测试邮箱脱敏...' });
+                const test3 = PrivacyFilter.sanitize('邮箱是 test@example.com');
+                if (test3.includes('[邮箱]')) {
+                    logs.push({ type: 'success', message: `✅ 邮箱脱敏成功：${test3}` });
+                } else {
+                    logs.push({ type: 'error', message: `❌ 邮箱脱敏失败：${test3}` });
+                }
+                
+                const allPass = test1.includes('[手机号]') && 
+                               test2.includes('[地址]') && 
+                               test3.includes('[邮箱]');
+                
+                return { pass: allPass, logs };
+            } catch (e) {
+                logs.push({ type: 'error', message: `❌ 隐私脱敏测试失败：${e.message}` });
+                return { pass: false, logs };
+            }
+        }
+        
+        async function testSecurityEncrypt() {
+            const logs = [];
+            try {
+                if (!window.security) {
+                    logs.push({ type: 'error', message: '❌ security 未定义' });
+                    return { pass: false, logs };
+                }
+                
+                logs.push({ type: 'info', message: '测试数据加密...' });
+                const testData = { message: '敏感数据', timestamp: Date.now() };
+                const encrypted = await security.encrypt(testData);
+                logs.push({ type: 'success', message: '✅ 数据加密成功' });
+                
+                logs.push({ type: 'info', message: '测试数据解密...' });
+                const decrypted = await security.decrypt(encrypted);
+                
+                if (decrypted.message === testData.message) {
+                    logs.push({ type: 'success', message: '✅ 数据解密成功' });
+                    return { pass: true, logs };
+                } else {
+                    logs.push({ type: 'error', message: '❌ 解密数据不匹配' });
+                    return { pass: false, logs };
+                }
+            } catch (e) {
+                logs.push({ type: 'error', message: `❌ 加密系统测试失败：${e.message}\n${e.stack}` });
+                return { pass: false, logs };
+            }
+        }
+        
+        async function testAliyunChat() {
+            const logs = [];
+            try {
+                if (!window.aliyunBrowserClient) {
+                    logs.push({ type: 'error', message: '❌ aliyunBrowserClient 未定义' });
+                    return { pass: false, logs };
+                }
+                
+                logs.push({ type: 'info', message: '测试阿里云文本对话...' });
+                logs.push({ type: 'warn', message: '⏳ 可能需要几秒...' });
+                
+                const messages = [{ role: 'user', content: '你好，请简单回复' }];
+                const response = await aliyunBrowserClient.chat(messages);
+                
+                logs.push({ type: 'success', message: `✅ 收到回复：${response.content.substring(0, 50)}...` });
+                logs.push({ type: 'success', message: `✅ 使用模型：${response.model}` });
+                
+                return { pass: true, logs };
+            } catch (e) {
+                logs.push({ type: 'error', message: `❌ 阿里云对话测试失败：${e.message}` });
+                
+                if (e.message.includes('Failed to fetch')) {
+                    logs.push({ type: 'warn', message: '可能原因：网络问题或 API 密钥无效' });
+                } else if (e.message.includes('401')) {
+                    logs.push({ type: 'warn', message: '可能原因：API 密钥无效或过期' });
+                } else if (e.message.includes('429')) {
+                    logs.push({ type: 'warn', message: '可能原因：请求频率超限' });
+                }
+                
+                return { pass: false, logs };
+            }
+        }
+        
+        async function testAliyunVision() {
+            const logs = [];
+            try {
+                if (!window.aliyunBrowserClient) {
+                    logs.push({ type: 'error', message: '❌ aliyunBrowserClient 未定义' });
+                    return { pass: false, logs };
+                }
+                
+                logs.push({ type: 'info', message: '测试视觉模型路由...' });
+                const route = aliyunBrowserClient.selectModel('这是什么图片？', true);
+                
+                if (route.model === 'qwen-vl-max') {
+                    logs.push({ type: 'success', message: `✅ 路由正确：${route.model}` });
+                    return { pass: true, logs };
+                } else {
+                    logs.push({ type: 'error', message: `❌ 路由错误：期望 qwen-vl-max，实际${route.model}` });
+                    return { pass: false, logs };
+                }
+            } catch (e) {
+                logs.push({ type: 'error', message: `❌ 图像识别测试失败：${e.message}` });
+                return { pass: false, logs };
+            }
+        }
+        
+        async function testSmartRouter() {
+            const logs = [];
+            try {
+                if (!window.aliyunBrowserClient) {
+                    logs.push({ type: 'error', message: '❌ aliyunBrowserClient 未定义' });
+                    return { pass: false, logs };
+                }
+                
+                logs.push({ type: 'info', message: '测试简单对话路由...' });
+                const route1 = aliyunBrowserClient.selectModel('你好');
+                logs.push({ type: 'success', message: `简单对话 → ${route1.model}` });
+                
+                logs.push({ type: 'info', message: '测试知识问答路由...' });
+                const route2 = aliyunBrowserClient.selectModel('什么是量子力学？');
+                logs.push({ type: 'success', message: `知识问答 → ${route2.model}` });
+                
+                logs.push({ type: 'info', message: '测试代码编程路由...' });
+                const route3 = aliyunBrowserClient.selectModel('用 Python 写快速排序');
+                logs.push({ type: 'success', message: `代码编程 → ${route3.model}` });
+                
+                logs.push({ type: 'info', message: '测试图像识别路由...' });
+                const route4 = aliyunBrowserClient.selectModel('识别这张图片', true);
+                logs.push({ type: 'success', message: `图像识别 → ${route4.model}` });
+                
+                return { pass: true, logs };
+            } catch (e) {
+                logs.push({ type: 'error', message: `❌ 智能路由测试失败：${e.message}` });
+                return { pass: false, logs };
+            }
+        }
+        
+        createTestInterface();
+        console.log('📦 测试页面 V2 已加载');
+        console.log('点击"▶️ 运行全部测试"开始测试');
+    </script>
+</body>
+</html>
