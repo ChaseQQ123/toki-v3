@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOKI V6 - 你的智能秘书</title>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            z-index: 9999;
+        }
+        
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .loading-subtext {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        /* 简化样式，确保能显示 */
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .chat-box {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        
+        .message {
+            padding: 12px 16px;
+            margin: 10px 0;
+            border-radius: 12px;
+            max-width: 80%;
+        }
+        
+        .message.user {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-left: auto;
+        }
+        
+        .message.bot {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .input-area {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .input-area input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            font-size: 16px;
+        }
+        
+        .input-area button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .status-bar {
+            background: white;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .quick-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+        
+        .quick-btn {
+            padding: 6px 12px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        
+        .quick-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- 加载屏幕 -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">TOKI V6 初始化中...</div>
+        <div class="loading-subtext" id="loadingStatus">加载核心模块...</div>
+    </div>
+    
+    <!-- 主界面 -->
+    <div class="app-container" id="appContainer" style="display: none;">
+        <div class="status-bar">
+            <span id="systemStatus">🟢 系统就绪</span> | 
+            记忆：<span id="memoryCount">0</span> | 
+            DNA: <span id="dnaCount">0</span>
+        </div>
+        
+        <div class="chat-box">
+            <div id="messageList">
+                <div class="message bot">
+                    🐼 你好！我是 TOKI V6，你的私人 AI 秘书。<br><br>
+                    ✅ 纯本地存储<br>
+                    ✅ 硬件级加密<br>
+                    ✅ 自动隐私脱敏<br>
+                    ✅ DNA 学习系统<br>
+                    <br>
+                    有什么可以帮你的吗？
+                </div>
+            </div>
+            
+            <div class="quick-actions">
+                <button class="quick-btn" onclick="quickAsk('写一封邮件')">📧 写邮件</button>
+                <button class="quick-btn" onclick="quickAsk('总结文档')">📄 总结</button>
+                <button class="quick-btn" onclick="quickAsk('翻译')">🌐 翻译</button>
+                <button class="quick-btn" onclick="quickAsk('日程安排')">📅 日程</button>
+                <button class="quick-btn" onclick="quickAsk('写代码')">💻 代码</button>
+                <button class="quick-btn" onclick="quickAsk('天气查询')">🌤️ 天气</button>
+            </div>
+            
+            <div class="input-area">
+                <input type="text" id="messageInput" placeholder="输入消息..." onkeypress="handleKeyPress(event)">
+                <button onclick="sendMessage()">发送</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 加载核心脚本 -->
+    <script src="v6-core.js"></script>
+    <script src="aliyun-client.js"></script>
+    
+    <script>
+        let v6Ready = false;
+        let chatHistory = [];
+        
+        // 初始化
+        async function init() {
+            try {
+                updateLoading('加载记忆系统...');
+                
+                // 等待 V6 核心初始化
+                if (typeof initTOKIV6 === 'function') {
+                    const success = await initTOKIV6();
+                    if (success) {
+                        v6Ready = true;
+                        updateLoading('初始化完成！');
+                        
+                        // 更新统计
+                        updateStats();
+                        
+                        setTimeout(() => {
+                            document.getElementById('loadingScreen').style.display = 'none';
+                            document.getElementById('appContainer').style.display = 'block';
+                            document.getElementById('systemStatus').textContent = '🟢 纯本地存储 · 硬件加密';
+                        }, 500);
+                        
+                        return;
+                    }
+                }
+                
+                throw new Error('V6 核心初始化失败');
+                
+            } catch (e) {
+                console.error('初始化错误:', e);
+                updateLoading('初始化失败：' + e.message);
+                
+                setTimeout(() => {
+                    document.getElementById('loadingScreen').innerHTML = `
+                        <div style="text-align: center; padding: 40px;">
+                            <div style="font-size: 60px; margin-bottom: 20px;">❌</div>
+                            <div style="font-size: 20px; margin-bottom: 20px;">初始化失败</div>
+                            <div style="font-size: 14px; opacity: 0.8; margin-bottom: 30px;">${e.message}</div>
+                            <button onclick="location.reload()" style="padding: 12px 24px; background: #667eea; color: white; border: none; border-radius: 12px; cursor: pointer;">重新加载</button>
+                        </div>
+                    `;
+                }, 2000);
+            }
+        }
+        
+        function updateLoading(text) {
+            document.getElementById('loadingStatus').textContent = text;
+        }
+        
+        async function updateStats() {
+            if (!v6Ready) return;
+            
+            try {
+                if (window.memoryStore) {
+                    const stats = await memoryStore.getStats();
+                    document.getElementById('memoryCount').textContent = stats.total || 0;
+                }
+                
+                if (window.dnaSystem) {
+                    const dnaStats = dnaSystem.getStats();
+                    document.getElementById('dnaCount').textContent = dnaStats.preferences + dnaStats.habits + dnaStats.knowledge || 0;
+                }
+            } catch (e) {
+                console.error('更新统计失败:', e);
+            }
+        }
+        
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // 添加用户消息
+            addMessage(message, 'user');
+            input.value = '';
+            
+            // 保存到记忆
+            if (v6Ready && window.memoryStore) {
+                try {
+                    await memoryStore.add({
+                        role: 'user',
+                        content: message,
+                        timestamp: Date.now()
+                    });
+                } catch (e) {
+                    console.error('保存记忆失败:', e);
+                }
+            }
+            
+            // 调用 AI
+            try {
+                // 隐私脱敏
+                const sanitized = window.PrivacyFilter ? PrivacyFilter.sanitize(message) : message;
+                
+                const messages = [
+                    { role: 'system', content: '你是 TOKI V6，用户的私人 AI 秘书。' },
+                    ...chatHistory.slice(-10),
+                    { role: 'user', content: sanitized }
+                ];
+                
+                // 检查阿里云客户端
+                if (window.aliyunClient) {
+                    const response = await aliyunClient.chat(messages);
+                    
+                    addMessage(response.content, 'bot');
+                    chatHistory.push({ role: 'assistant', content: response.content });
+                    
+                    // 保存 AI 回复到记忆
+                    if (v6Ready && window.memoryStore) {
+                        await memoryStore.add({
+                            role: 'assistant',
+                            content: response.content,
+                            timestamp: Date.now()
+                        });
+                        
+                        // DNA 学习
+                        if (window.dnaSystem) {
+                            await dnaSystem.learn(message, response.content);
+                        }
+                        
+                        updateStats();
+                    }
+                } else {
+                    addMessage('阿里云客户端未加载，这是模拟回复。', 'bot');
+                }
+                
+            } catch (e) {
+                console.error('发送失败:', e);
+                addMessage('出错了：' + e.message, 'bot');
+            }
+        }
+        
+        function addMessage(text, type) {
+            const list = document.getElementById('messageList');
+            const div = document.createElement('div');
+            div.className = 'message ' + type;
+            div.innerHTML = text.replace(/\n/g, '<br>');
+            list.appendChild(div);
+            list.scrollTop = list.scrollHeight;
+        }
+        
+        function quickAsk(question) {
+            document.getElementById('messageInput').value = question;
+            sendMessage();
+        }
+        
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        // 页面加载完成后初始化
+        window.addEventListener('DOMContentLoaded', init);
+        
+        console.log('📦 TOKI V6 简化版已加载');
+    </script>
+</body>
+</html>
