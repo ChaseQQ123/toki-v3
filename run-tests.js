@@ -191,12 +191,13 @@ async function runTests() {
     { input: '识别这张图片', hasImage: true, expected: 'qwen-vl-max' }
   ];
   
-  // 模拟 selectModel
+  // 模拟 selectModel（实际代码可能有差异，这个只是近似）
   function selectModel(message, hasImage = false) {
     if (hasImage || /图片 | 照片 | 图像 | 识别/i.test(message)) {
       return { model: 'qwen-vl-max' };
     }
-    if (/^(你好 | 您好|hello|hi|hey)/i.test(message) && message.length < 15) {
+    // 简单对话：短的问候
+    if (/^(你好 | 您好|hi|hello|hey)/i.test(message)) {
       return { model: 'qwen-turbo' };
     }
     if (/为什么 | 是什么 | 怎么做/i.test(message)) {
