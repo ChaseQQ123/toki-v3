@@ -2,700 +2,1039 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TOKI - 全能AI助手</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>TOKI - 托克秘书</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #f5f5f5;
             min-height: 100vh;
+            overflow: hidden;
         }
         
-        .app-container {
+        .app {
             max-width: 480px;
             margin: 0 auto;
-            background: white;
-            min-height: 100vh;
+            height: 100vh;
             display: flex;
             flex-direction: column;
+            background: white;
+            position: relative;
         }
         
-        /* 头部 */
+        /* 顶部栏 */
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 15px 20px;
+            padding: 12px 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: relative;
+            z-index: 10;
         }
         
-        .logo {
+        .header-left {
             display: flex;
             align-items: center;
             gap: 8px;
         }
         
-        .logo-icon {
-            font-size: 24px;
-        }
-        
-        .logo-text {
-            font-size: 20px;
-            font-weight: bold;
-        }
-        
-        /* 功能导航 */
-        .feature-nav {
-            display: flex;
-            overflow-x: auto;
-            padding: 10px;
-            background: #f8f9fa;
-            gap: 8px;
-        }
-        
-        .feature-nav::-webkit-scrollbar {
-            display: none;
-        }
-        
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 12px 16px;
+        .panda-avatar {
+            width: 36px;
+            height: 36px;
             background: white;
-            border-radius: 12px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .header-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .header-right {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .header-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
-            transition: all 0.3s;
-            min-width: 70px;
         }
         
-        .nav-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        /* 主内容区 */
+        .main-content {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
         }
         
-        .nav-item.active {
+        /* 页面容器 */
+        .page {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: none;
+            flex-direction: column;
+        }
+        
+        .page.active {
+            display: flex;
+        }
+        
+        /* ========== 对话页 ========== */
+        .chat-page {
+            background: #f5f5f5;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+        
+        .message {
+            margin-bottom: 12px;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .message.user {
+            flex-direction: row-reverse;
+        }
+        
+        .msg-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        
+        .message.user .msg-avatar {
+            background: #333;
+        }
+        
+        .msg-content {
+            max-width: 75%;
+            padding: 10px 14px;
+            border-radius: 16px;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+        
+        .message.bot .msg-content {
+            background: white;
+            color: #333;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .message.user .msg-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        
+        /* 输入区 */
+        .input-area {
+            padding: 12px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+        }
+        
+        .input-tools {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .tool-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: #f0f0f0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s;
+        }
+        
+        .tool-btn:active {
+            transform: scale(0.95);
+            background: #e0e0e0;
+        }
+        
+        .tool-btn.recording {
+            background: #ff4444;
             color: white;
         }
         
-        .nav-icon {
-            font-size: 24px;
-            margin-bottom: 4px;
+        .input-wrapper {
+            flex: 1;
+            display: flex;
+            background: #f5f5f5;
+            border-radius: 20px;
+            padding: 4px;
         }
         
-        .nav-label {
-            font-size: 12px;
-            white-space: nowrap;
+        .input-wrapper input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 8px 12px;
+            font-size: 15px;
+            outline: none;
         }
         
-        /* 内容区域 */
-        .content {
+        .send-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .send-btn:disabled {
+            opacity: 0.5;
+        }
+        
+        /* ========== 智能体页 ========== */
+        .agents-page {
+            background: white;
+        }
+        
+        .page-header {
+            padding: 16px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .page-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .agents-grid {
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
-        }
-        
-        /* 功能卡片 */
-        .feature-cards {
+            padding: 16px;
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 12px;
-            margin-bottom: 20px;
         }
         
-        .feature-card {
+        .agent-card {
             background: white;
-            border: 1px solid #e9ecef;
+            border: 1px solid #e0e0e0;
             border-radius: 12px;
-            padding: 15px;
+            padding: 16px;
+            text-align: center;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.2s;
         }
         
-        .feature-card:hover {
-            border-color: #667eea;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+        .agent-card:active {
+            transform: scale(0.98);
+            background: #f5f5f5;
         }
         
-        .card-icon {
-            font-size: 32px;
+        .agent-icon {
+            font-size: 36px;
             margin-bottom: 8px;
         }
         
-        .card-title {
+        .agent-name {
             font-size: 14px;
             font-weight: 600;
             margin-bottom: 4px;
         }
         
-        .card-desc {
+        .agent-desc {
             font-size: 12px;
             color: #666;
         }
         
-        /* 对话区域 */
-        .chat-area {
-            display: none;
+        /* ========== 创作页 ========== */
+        .create-page {
+            background: white;
         }
         
-        .chat-area.active {
-            display: block;
+        .create-grid {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
         }
         
-        .message {
-            margin-bottom: 15px;
-            padding: 12px;
-            border-radius: 12px;
-            max-width: 80%;
-        }
-        
-        .message.user {
+        .create-card {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            margin-left: auto;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
         }
         
-        .message.bot {
-            background: #f8f9fa;
+        .create-card:active {
+            transform: scale(0.98);
+        }
+        
+        .create-card:nth-child(2) {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .create-card:nth-child(3) {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .create-card:nth-child(4) {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        
+        .create-card:nth-child(5) {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+        
+        .create-card:nth-child(6) {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
             color: #333;
         }
         
-        /* 输入区域 */
-        .input-area {
-            padding: 15px;
-            background: white;
-            border-top: 1px solid #e9ecef;
+        .create-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
         }
         
-        .input-wrapper {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .input-wrapper input {
-            flex: 1;
-            padding: 12px;
-            border: 2px solid #e9ecef;
-            border-radius: 24px;
-            outline: none;
-        }
-        
-        .input-wrapper input:focus {
-            border-color: #667eea;
-        }
-        
-        .send-btn {
-            padding: 12px 24px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 24px;
-            cursor: pointer;
+        .create-name {
+            font-size: 15px;
             font-weight: 600;
+            margin-bottom: 4px;
         }
         
-        /* 模态框 */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
+        .create-desc {
+            font-size: 12px;
+            opacity: 0.9;
         }
         
-        .modal.active {
+        /* ========== 我的页 ========== */
+        .mine-page {
+            background: #f5f5f5;
+        }
+        
+        .mine-header {
+            background: white;
+            padding: 24px 16px;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+        
+        .mine-avatar {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            margin: 0 auto 12px;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 32px;
         }
         
-        .modal-content {
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            width: 90%;
-            max-width: 400px;
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-        }
-        
-        .modal-title {
+        .mine-name {
             font-size: 18px;
             font-weight: 600;
         }
         
-        .modal-close {
-            font-size: 24px;
+        .mine-stats {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin-top: 16px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 20px;
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .mine-list {
+            background: white;
+            border-radius: 12px;
+            margin: 0 16px;
+            overflow: hidden;
+        }
+        
+        .mine-item {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+        }
+        
+        .mine-item:last-child {
+            border-bottom: none;
+        }
+        
+        .mine-item:active {
+            background: #f5f5f5;
+        }
+        
+        .mine-item-icon {
+            font-size: 20px;
+            margin-right: 12px;
+        }
+        
+        .mine-item-text {
+            flex: 1;
+            font-size: 15px;
+        }
+        
+        .mine-item-arrow {
+            color: #ccc;
+        }
+        
+        /* ========== 底部导航 ========== */
+        .bottom-nav {
+            display: flex;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            padding: 8px 0;
+        }
+        
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 0;
             cursor: pointer;
             color: #999;
+            transition: all 0.2s;
         }
         
-        .modal-input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            margin-bottom: 10px;
+        .nav-item.active {
+            color: #667eea;
         }
         
-        .modal-textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            min-height: 100px;
+        .nav-icon {
+            font-size: 22px;
+            margin-bottom: 4px;
         }
         
-        .modal-btn {
-            width: 100%;
+        .nav-label {
+            font-size: 12px;
+        }
+        
+        /* 加载动画 */
+        .loading {
+            display: flex;
+            gap: 4px;
             padding: 12px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
         }
         
-        /* 响应式 */
-        @media (max-width: 768px) {
-            .app-container {
-                max-width: 100%;
-            }
+        .loading span {
+            width: 8px;
+            height: 8px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        
+        .loading span:nth-child(1) { animation-delay: -0.32s; }
+        .loading span:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+        
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        
+        .toast.show {
+            opacity: 1;
         }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- 头部 -->
-        <header class="header">
-            <div class="logo">
-                <span class="logo-icon">🤖</span>
-                <span class="logo-text">TOKI</span>
+    <div class="app">
+        <!-- 顶部栏 -->
+        <div class="header">
+            <div class="header-left">
+                <div class="panda-avatar">🐼</div>
+                <span class="header-title">托克秘书</span>
             </div>
-            <div>💎 10,000</div>
-        </header>
+            <div class="header-right">
+                <button class="header-btn" onclick="showHistory()">📜</button>
+                <button class="header-btn" onclick="newChat()">➕</button>
+            </div>
+        </div>
         
-        <!-- 功能导航 -->
-        <nav class="feature-nav">
-            <div class="nav-item active" onclick="switchTab('chat')">
+        <!-- 主内容区 -->
+        <div class="main-content">
+            <!-- 对话页 -->
+            <div class="page chat-page active" id="page-chat">
+                <div class="chat-messages" id="messages"></div>
+                <div class="input-area">
+                    <div class="input-tools">
+                        <button class="tool-btn" id="voiceBtn" onclick="toggleVoice()">🎤</button>
+                        <button class="tool-btn" onclick="uploadImage()">🖼️</button>
+                    </div>
+                    <div class="input-wrapper">
+                        <input type="text" id="input" placeholder="输入消息..." onkeypress="handleKeyPress(event)">
+                        <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 智能体页 -->
+            <div class="page agents-page" id="page-agents">
+                <div class="page-header">
+                    <h1 class="page-title">🤖 智能体</h1>
+                </div>
+                <div class="agents-grid">
+                    <div class="agent-card" onclick="selectAgent('数据分析师', '📊')">
+                        <div class="agent-icon">📊</div>
+                        <div class="agent-name">数据分析师</div>
+                        <div class="agent-desc">数据分析、图表解读</div>
+                    </div>
+                    <div class="agent-card" onclick="selectAgent('商务助手', '💼')">
+                        <div class="agent-icon">💼</div>
+                        <div class="agent-name">商务助手</div>
+                        <div class="agent-desc">商业文档、报告</div>
+                    </div>
+                    <div class="agent-card" onclick="selectAgent('学习导师', '📚')">
+                        <div class="agent-icon">📚</div>
+                        <div class="agent-name">学习导师</div>
+                        <div class="agent-desc">知识讲解、学习计划</div>
+                    </div>
+                    <div class="agent-card" onclick="selectAgent('设计师助手', '🎨')">
+                        <div class="agent-icon">🎨</div>
+                        <div class="agent-name">设计师助手</div>
+                        <div class="agent-desc">设计建议、配色</div>
+                    </div>
+                    <div class="agent-card" onclick="selectAgent('写作伙伴', '✍️')">
+                        <div class="agent-icon">✍️</div>
+                        <div class="agent-name">写作伙伴</div>
+                        <div class="agent-desc">文章创作、文案优化</div>
+                    </div>
+                    <div class="agent-card" onclick="selectAgent('编程助手', '💻')">
+                        <div class="agent-icon">💻</div>
+                        <div class="agent-name">编程助手</div>
+                        <div class="agent-desc">代码编写、技术解答</div>
+                    </div>
+                    <div class="agent-card" onclick="selectAgent('文案博主', '📝')">
+                        <div class="agent-icon">📝</div>
+                        <div class="agent-name">文案博主</div>
+                        <div class="agent-desc">营销文案、标题优化</div>
+                    </div>
+                    <div class="agent-card" onclick="selectAgent('视频编导', '🎬')">
+                        <div class="agent-icon">🎬</div>
+                        <div class="agent-name">视频编导</div>
+                        <div class="agent-desc">脚本创作、分镜设计</div>
+                    </div>
+                    <div class="agent-card" onclick="selectAgent('投资顾问', '📈')">
+                        <div class="agent-icon">📈</div>
+                        <div class="agent-name">投资顾问</div>
+                        <div class="agent-desc">投资建议、市场分析</div>
+                    </div>
+                    <div class="agent-card" onclick="selectAgent('法律顾问', '⚖️')">
+                        <div class="agent-icon">⚖️</div>
+                        <div class="agent-name">法律顾问</div>
+                        <div class="agent-desc">法律咨询、合同审查</div>
+                    </div>
+                    <div class="agent-card" onclick="selectAgent('健康管家', '🏥')">
+                        <div class="agent-icon">🏥</div>
+                        <div class="agent-name">健康管家</div>
+                        <div class="agent-desc">健康建议、饮食规划</div>
+                    </div>
+                    <div class="agent-card" onclick="selectAgent('旅行规划师', '🌏')">
+                        <div class="agent-icon">🌏</div>
+                        <div class="agent-name">旅行规划师</div>
+                        <div class="agent-desc">行程规划、攻略制定</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 创作页 -->
+            <div class="page create-page" id="page-create">
+                <div class="page-header">
+                    <h1 class="page-title">🎨 创作中心</h1>
+                </div>
+                <div class="create-grid">
+                    <div class="create-card" onclick="openCreate('文案生成')">
+                        <div class="create-icon">📝</div>
+                        <div class="create-name">文案生成</div>
+                        <div class="create-desc">广告、社交媒体文案</div>
+                    </div>
+                    <div class="create-card" onclick="openCreate('AI绘画')">
+                        <div class="create-icon">🎨</div>
+                        <div class="create-name">AI绘画</div>
+                        <div class="create-desc">文字生成精美图片</div>
+                    </div>
+                    <div class="create-card" onclick="openCreate('视频创作')">
+                        <div class="create-icon">🎬</div>
+                        <div class="create-name">视频创作</div>
+                        <div class="create-desc">脚本、分镜、视频生成</div>
+                    </div>
+                    <div class="create-card" onclick="openCreate('文档生成')">
+                        <div class="create-icon">📄</div>
+                        <div class="create-name">文档生成</div>
+                        <div class="create-desc">PPT大纲、报告、演讲稿</div>
+                    </div>
+                    <div class="create-card" onclick="openCreate('翻译润色')">
+                        <div class="create-icon">🌐</div>
+                        <div class="create-name">翻译润色</div>
+                        <div class="create-desc">多语言翻译、文本润色</div>
+                    </div>
+                    <div class="create-card" onclick="openCreate('智能工具')">
+                        <div class="create-icon">🛠️</div>
+                        <div class="create-name">智能工具</div>
+                        <div class="create-desc">格式转换、数据处理</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 我的页 -->
+            <div class="page mine-page" id="page-mine">
+                <div class="mine-header">
+                    <div class="mine-avatar">🐼</div>
+                    <div class="mine-name">用户</div>
+                    <div class="mine-stats">
+                        <div class="stat-item">
+                            <div class="stat-value" id="stat-messages">0</div>
+                            <div class="stat-label">对话数</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="stat-tokens">0</div>
+                            <div class="stat-label">Token</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="stat-days">1</div>
+                            <div class="stat-label">使用天数</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mine-list">
+                    <div class="mine-item" onclick="showHistory()">
+                        <span class="mine-item-icon">💬</span>
+                        <span class="mine-item-text">历史对话</span>
+                        <span class="mine-item-arrow">›</span>
+                    </div>
+                    <div class="mine-item" onclick="showFavorites()">
+                        <span class="mine-item-icon">📌</span>
+                        <span class="mine-item-text">我的收藏</span>
+                        <span class="mine-item-arrow">›</span>
+                    </div>
+                    <div class="mine-item" onclick="showSettings()">
+                        <span class="mine-item-icon">⚙️</span>
+                        <span class="mine-item-text">设置</span>
+                        <span class="mine-item-arrow">›</span>
+                    </div>
+                    <div class="mine-item" onclick="showHelp()">
+                        <span class="mine-item-icon">❓</span>
+                        <span class="mine-item-text">帮助与反馈</span>
+                        <span class="mine-item-arrow">›</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 底部导航 -->
+        <div class="bottom-nav">
+            <div class="nav-item active" data-page="chat" onclick="switchPage('chat')">
                 <span class="nav-icon">💬</span>
                 <span class="nav-label">对话</span>
             </div>
-            <div class="nav-item" onclick="switchTab('write')">
-                <span class="nav-icon">📝</span>
-                <span class="nav-label">写作</span>
+            <div class="nav-item" data-page="agents" onclick="switchPage('agents')">
+                <span class="nav-icon">🤖</span>
+                <span class="nav-label">智能体</span>
             </div>
-            <div class="nav-item" onclick="switchTab('learn')">
-                <span class="nav-icon">📚</span>
-                <span class="nav-label">学习</span>
+            <div class="nav-item" data-page="create" onclick="switchPage('create')">
+                <span class="nav-icon">🎨</span>
+                <span class="nav-label">创作</span>
             </div>
-            <div class="nav-item" onclick="switchTab('tools')">
-                <span class="nav-icon">🛠️</span>
-                <span class="nav-label">工具</span>
+            <div class="nav-item" data-page="mine" onclick="switchPage('mine')">
+                <span class="nav-icon">👤</span>
+                <span class="nav-label">我的</span>
             </div>
-            <div class="nav-item" onclick="switchTab('fun')">
-                <span class="nav-icon">🎭</span>
-                <span class="nav-label">娱乐</span>
-            </div>
-        </nav>
-        
-        <!-- 内容区域 -->
-        <main class="content">
-            <!-- 对话 -->
-            <div id="chatTab" class="chat-area active">
-                <div class="message bot">
-                    你好！我是TOKI，你的全能AI助手。✨<br><br>
-                    我可以帮你：<br>
-                    💬 智能对话问答<br>
-                    📝 各种文案写作<br>
-                    📚 学习辅导<br>
-                    🎨 图像生成<br><br>
-                    有什么我可以帮你的吗？
-                </div>
-            </div>
-            
-            <!-- 写作 -->
-            <div id="writeTab" class="chat-area">
-                <div class="feature-cards">
-                    <div class="feature-card" onclick="openWritingModal('moments')">
-                        <div class="card-icon">💬</div>
-                        <div class="card-title">朋友圈文案</div>
-                        <div class="card-desc">快速生成朋友圈文案</div>
-                    </div>
-                    
-                    <div class="feature-card" onclick="openWritingModal('xiaohongshu')">
-                        <div class="card-icon">📕</div>
-                        <div class="card-title">小红书文案</div>
-                        <div class="card-desc">爆款笔记一键生成</div>
-                    </div>
-                    
-                    <div class="feature-card" onclick="openWritingModal('email')">
-                        <div class="card-icon">📧</div>
-                        <div class="card-title">邮件写作</div>
-                        <div class="card-desc">商务邮件快速生成</div>
-                    </div>
-                    
-                    <div class="feature-card" onclick="openWritingModal('article')">
-                        <div class="card-icon">📄</div>
-                        <div class="card-title">文章创作</div>
-                        <div class="card-desc">大纲+内容生成</div>
-                    </div>
-                    
-                    <div class="feature-card" onclick="openWritingModal('translate')">
-                        <div class="card-icon">🌐</div>
-                        <div class="card-title">翻译</div>
-                        <div class="card-desc">多语言翻译</div>
-                    </div>
-                    
-                    <div class="feature-card" onclick="openWritingModal('summary')">
-                        <div class="card-icon">📊</div>
-                        <div class="card-title">内容总结</div>
-                        <div class="card-desc">长文快速总结</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 学习 -->
-            <div id="learnTab" class="chat-area">
-                <div class="feature-cards">
-                    <div class="feature-card" onclick="openLearningModal('homework')">
-                        <div class="card-icon">✏️</div>
-                        <div class="card-title">作业辅导</div>
-                        <div class="card-desc">题目解答+讲解</div>
-                    </div>
-                    
-                    <div class="feature-card" onclick="openLearningModal('explain')">
-                        <div class="card-icon">💡</div>
-                        <div class="card-title">知识讲解</div>
-                        <div class="card-desc">通俗易懂解释概念</div>
-                    </div>
-                    
-                    <div class="feature-card" onclick="openLearningModal('english')">
-                        <div class="card-icon">🔤</div>
-                        <div class="card-title">英语学习</div>
-                        <div class="card-desc">语法、翻译、作文</div>
-                    </div>
-                    
-                    <div class="feature-card" onclick="openLearningModal('plan')">
-                        <div class="card-icon">📅</div>
-                        <div class="card-title">学习计划</div>
-                        <div class="card-desc">制定学习计划</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 工具 -->
-            <div id="toolsTab" class="chat-area">
-                <div class="feature-cards">
-                    <div class="feature-card" onclick="openToolModal('image')">
-                        <div class="card-icon">🎨</div>
-                        <div class="card-title">图像生成</div>
-                        <div class="card-desc">文字生成图片</div>
-                    </div>
-                    
-                    <div class="feature-card" onclick="openToolModal('vision')">
-                        <div class="card-icon">📸</div>
-                        <div class="card-title">图像识别</div>
-                        <div class="card-desc">上传图片识别</div>
-                    </div>
-                    
-                    <div class="feature-card" onclick="window.location.href='video-call.html'">
-                        <div class="card-icon">📹</div>
-                        <div class="card-title">视频通话</div>
-                        <div class="card-desc">P2P视频聊天</div>
-                    </div>
-                    
-                    <div class="feature-card" onclick="openToolModal('voice')">
-                        <div class="card-icon">🎤</div>
-                        <div class="card-title">语音对话</div>
-                        <div class="card-desc">语音实时对话</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 娱乐 -->
-            <div id="funTab" class="chat-area">
-                <div class="feature-cards">
-                    <div class="feature-card" onclick="openFunModal('roleplay')">
-                        <div class="card-icon">🎭</div>
-                        <div class="card-title">角色扮演</div>
-                        <div class="card-desc">与AI角色对话</div>
-                    </div>
-                    
-                    <div class="feature-card" onclick="openFunModal('story')">
-                        <div class="card-icon">📖</div>
-                        <div class="card-title">故事创作</div>
-                        <div class="card-desc">生成精彩故事</div>
-                    </div>
-                    
-                    <div class="feature-card" onclick="openFunModal('joke')">
-                        <div class="card-icon">😂</div>
-                        <div class="card-title">讲笑话</div>
-                        <div class="card-desc">轻松幽默</div>
-                    </div>
-                    
-                    <div class="feature-card" onclick="openFunModal('chat')">
-                        <div class="card-icon">💬</div>
-                        <div class="card-title">聊天陪伴</div>
-                        <div class="card-desc">情感支持</div>
-                    </div>
-                </div>
-            </div>
-        </main>
-        
-        <!-- 输入区域 -->
-        <footer class="input-area">
-            <div class="input-wrapper">
-                <input type="text" id="userInput" placeholder="输入你的问题..." autocomplete="off">
-                <button class="send-btn" onclick="sendMessage()">发送</button>
-            </div>
-        </footer>
-    </div>
-    
-    <!-- 写作模态框 -->
-    <div class="modal" id="writingModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <span class="modal-title" id="modalTitle">写作助手</span>
-                <span class="modal-close" onclick="closeModal()">×</span>
-            </div>
-            <textarea class="modal-textarea" id="modalInput" placeholder="输入内容..."></textarea>
-            <button class="modal-btn" onclick="generateContent()">生成</button>
         </div>
+        
+        <!-- Toast -->
+        <div class="toast" id="toast"></div>
     </div>
     
+    <script src="picoclaw.js"></script>
     <script>
-        // API配置
-        const API_KEY = 'c4911cf15f844167bd26301e25622cf1.n1BU10ytXbnQ6N5d';
-        const BASE_URL = 'https://open.bigmodel.cn/api/paas/v4';
+        // ========== 全局状态 ==========
+        let memory = null;
+        let currentAgent = null;
+        let messageCount = 0;
+        let tokenCount = 0;
+        let isRecording = false;
+        let recognition = null;
         
-        // 切换标签页
-        function switchTab(tab) {
-            // 隐藏所有标签页
-            document.querySelectorAll('.chat-area').forEach(el => {
-                el.classList.remove('active');
-            });
-            
-            // 显示选中的标签页
-            document.getElementById(tab + 'Tab').classList.add('active');
-            
-            // 更新导航栏
-            document.querySelectorAll('.nav-item').forEach(el => {
-                el.classList.remove('active');
-            });
-            event.currentTarget.classList.add('active');
-        }
-        
-        // 打开写作模态框
-        function openWritingModal(type) {
-            const titles = {
-                moments: '朋友圈文案',
-                xiaohongshu: '小红书文案',
-                email: '邮件写作',
-                article: '文章创作',
-                translate: '翻译',
-                summary: '内容总结'
-            };
-            
-            document.getElementById('modalTitle').textContent = titles[type];
-            document.getElementById('modalInput').placeholder = getPlaceholder(type);
-            document.getElementById('writingModal').classList.add('active');
-            document.getElementById('writingModal').dataset.type = type;
-        }
-        
-        // 获取占位符
-        function getPlaceholder(type) {
-            const placeholders = {
-                moments: '输入你想分享的内容，例如：今天去吃了火锅',
-                xiaohongshu: '输入笔记主题，例如：成都美食推荐',
-                email: '输入邮件内容，例如：向领导请假',
-                article: '输入文章主题，例如：人工智能的未来',
-                translate: '输入要翻译的内容',
-                summary: '粘贴需要总结的内容'
-            };
-            return placeholders[type];
-        }
-        
-        // 关闭模态框
-        function closeModal() {
-            document.getElementById('writingModal').classList.remove('active');
-        }
-        
-        // 生成内容
-        async function generateContent() {
-            const type = document.getElementById('writingModal').dataset.type;
-            const input = document.getElementById('modalInput').value;
-            
-            if (!input) {
-                alert('请输入内容');
-                return;
+        // ========== API配置（免费） ==========
+        const API_CONFIG = {
+            zhipu: {
+                url: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+                key: 'c4911cf15f844167bd26301e25622cf1.n1BU10ytXbnQ6N5d',
+                model: 'glm-4-flash'
             }
+        };
+        
+        // ========== 初始化 ==========
+        async function init() {
+            // 初始化记忆系统
+            memory = new PicoMemory();
+            await memory.init();
             
-            // 构建提示词
-            const prompts = {
-                moments: `帮我写一条朋友圈文案，内容是：${input}。要求：有趣、接地气、适合发朋友圈`,
-                xiaohongshu: `帮我写一篇小红书笔记，主题是：${input}。要求：包含标题、正文、标签，风格活泼，适合小红书`,
-                email: `帮我写一封邮件，内容是：${input}。要求：格式规范、语言得体`,
-                article: `帮我写一篇文章，主题是：${input}。要求：结构清晰、内容丰富、有深度`,
-                translate: `请翻译以下内容：${input}`,
-                summary: `请总结以下内容：${input}`
-            };
+            // 加载统计
+            loadStats();
             
-            const prompt = prompts[type];
+            // 显示欢迎消息
+            addMessage('bot', '你好！我是托克秘书🐼，你的全能AI助手。有什么我可以帮你的吗？');
             
-            // 调用API
-            try {
-                const response = await fetch(`${BASE_URL}/chat/completions`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${API_KEY}`
-                    },
-                    body: JSON.stringify({
-                        model: 'glm-4-flash',
-                        messages: [{role: 'user', content: prompt}]
-                    })
-                });
+            // 初始化语音识别
+            initVoiceRecognition();
+        }
+        
+        // ========== 语音识别 ==========
+        function initVoiceRecognition() {
+            if ('webkitSpeechRecognition' in window) {
+                recognition = new webkitSpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'zh-CN';
                 
-                if (response.ok) {
-                    const data = await response.json();
-                    const result = data.choices[0].message.content;
-                    
-                    // 切换到对话标签页
-                    switchTab('chat');
-                    
-                    // 添加消息
-                    addMessage(input, 'user');
-                    addMessage(result, 'bot');
-                    
-                    // 关闭模态框
-                    closeModal();
-                }
-            } catch (error) {
-                console.error('生成失败:', error);
-                alert('生成失败，请重试');
+                recognition.onresult = function(event) {
+                    const text = event.results[0][0].transcript;
+                    document.getElementById('input').value = text;
+                    stopRecording();
+                };
+                
+                recognition.onerror = function(event) {
+                    console.error('语音识别错误:', event.error);
+                    stopRecording();
+                    showToast('语音识别失败，请重试');
+                };
+                
+                recognition.onend = function() {
+                    stopRecording();
+                };
             }
         }
         
-        // 发送消息
+        function toggleVoice() {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        }
+        
+        function startRecording() {
+            if (recognition) {
+                isRecording = true;
+                document.getElementById('voiceBtn').classList.add('recording');
+                document.getElementById('voiceBtn').textContent = '⏹️';
+                recognition.start();
+                showToast('正在录音...');
+            } else {
+                showToast('您的浏览器不支持语音识别');
+            }
+        }
+        
+        function stopRecording() {
+            isRecording = false;
+            document.getElementById('voiceBtn').classList.remove('recording');
+            document.getElementById('voiceBtn').textContent = '🎤';
+            if (recognition) {
+                recognition.stop();
+            }
+        }
+        
+        // ========== 消息处理 ==========
         async function sendMessage() {
-            const input = document.getElementById('userInput');
-            const message = input.value.trim();
+            const input = document.getElementById('input');
+            const text = input.value.trim();
+            if (!text) return;
             
-            if (!message) return;
-            
-            addMessage(message, 'user');
+            // 显示用户消息
+            addMessage('user', text);
             input.value = '';
             
-            try {
-                const response = await fetch(`${BASE_URL}/chat/completions`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${API_KEY}`
-                    },
-                    body: JSON.stringify({
-                        model: 'glm-4-flash',
-                        messages: [{role: 'user', content: message}]
-                    })
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    const result = data.choices[0].message.content;
-                    addMessage(result, 'bot');
-                }
-            } catch (error) {
-                console.error('发送失败:', error);
-                addMessage('请求失败，请重试', 'bot');
+            // 更新统计
+            messageCount++;
+            updateStats();
+            
+            // 保存到记忆
+            await memory.remember('user', text, { type: 'chat' });
+            
+            // 获取AI回复
+            await getAIResponse(text);
+        }
+        
+        function addMessage(role, content) {
+            const messagesDiv = document.getElementById('messages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${role === 'user' ? 'user' : 'bot'}`;
+            
+            const avatar = role === 'user' ? '👤' : '🐼';
+            msgDiv.innerHTML = `
+                <div class="msg-avatar">${avatar}</div>
+                <div class="msg-content">${content}</div>
+            `;
+            
+            messagesDiv.appendChild(msgDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function addLoadingMessage() {
+            const messagesDiv = document.getElementById('messages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message bot';
+            msgDiv.id = 'loading-msg';
+            msgDiv.innerHTML = `
+                <div class="msg-avatar">🐼</div>
+                <div class="msg-content">
+                    <div class="loading">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            `;
+            messagesDiv.appendChild(msgDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function removeLoadingMessage() {
+            const loadingMsg = document.getElementById('loading-msg');
+            if (loadingMsg) {
+                loadingMsg.remove();
             }
         }
         
-        // 添加消息
-        function addMessage(content, type) {
-            const chatTab = document.getElementById('chatTab');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${type}`;
-            messageDiv.textContent = content;
-            chatTab.appendChild(messageDiv);
-            chatTab.scrollTop = chatTab.scrollHeight;
+        // ========== API调用 ==========
+        async function getAIResponse(text) {
+            addLoadingMessage();
+            
+            try {
+                // 构建系统提示
+                let systemPrompt = '你是托克秘书，一个友好、专业的AI助手。你的形象是一只可爱的四川大熊猫。请用简洁、温暖的方式回答问题。';
+                if (currentAgent) {
+                    systemPrompt += `你现在扮演${currentAgent.name}的角色，请用专业的态度回答相关问题。`;
+                }
+                
+                // 获取相关记忆
+                const relevantMemories = await memory.getRelevant(text);
+                if (relevantMemories.length > 0) {
+                    systemPrompt += `\n\n用户相关记忆：${relevantMemories.map(m => m.content).join('; ')}`;
+                }
+                
+                const response = await fetch(API_CONFIG.zhipu.url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_CONFIG.zhipu.key}`
+                    },
+                    body: JSON.stringify({
+                        model: API_CONFIG.zhipu.model,
+                        messages: [
+                            { role: 'system', content: systemPrompt },
+                            { role: 'user', content: text }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 1000
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API错误: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                const reply = data.choices[0].message.content;
+                
+                removeLoadingMessage();
+                addMessage('bot', reply);
+                
+                // 保存到记忆
+                await memory.remember('assistant', reply, { type: 'chat' });
+                
+                // 更新Token统计
+                if (data.usage) {
+                    tokenCount += data.usage.total_tokens || 0;
+                    updateStats();
+                }
+                
+            } catch (error) {
+                console.error('API调用失败:', error);
+                removeLoadingMessage();
+                addMessage('bot', '抱歉，网络连接出现问题，请稍后再试。🐼');
+            }
         }
         
-        // 回车发送
-        document.getElementById('userInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
+        // ========== 页面切换 ==========
+        function switchPage(page) {
+            // 隐藏所有页面
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            
+            // 显示目标页面
+            document.getElementById(`page-${page}`).classList.add('active');
+            
+            // 更新导航状态
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.querySelector(`[data-page="${page}"]`).classList.add('active');
+        }
+        
+        // ========== 智能体选择 ==========
+        function selectAgent(name, icon) {
+            currentAgent = { name, icon };
+            switchPage('chat');
+            showToast(`已切换为${icon} ${name}`);
+            addMessage('bot', `你好！我是${icon} ${name}，请问有什么可以帮助你的？`);
+        }
+        
+        // ========== 创作功能 ==========
+        function openCreate(type) {
+            switchPage('chat');
+            document.getElementById('input').value = `请帮我创作${type}内容：`;
+            showToast(`已打开${type}功能`);
+        }
+        
+        // ========== 其他功能 ==========
+        function uploadImage() {
+            showToast('图片上传功能开发中...');
+        }
+        
+        function showHistory() {
+            showToast('历史对话功能开发中...');
+        }
+        
+        function showFavorites() {
+            showToast('收藏功能开发中...');
+        }
+        
+        function showSettings() {
+            showToast('设置功能开发中...');
+        }
+        
+        function showHelp() {
+            showToast('帮助中心：toknm.hk');
+        }
+        
+        function newChat() {
+            document.getElementById('messages').innerHTML = '';
+            currentAgent = null;
+            addMessage('bot', '新对话已开始，有什么可以帮助你的？🐼');
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
                 sendMessage();
             }
-        });
-        
-        // 空函数（占位）
-        function openLearningModal(type) {
-            alert('学习功能开发中，敬请期待！');
         }
         
-        function openToolModal(type) {
-            if (type === 'image') {
-                const prompt = prompt('请输入图片描述：');
-                if (prompt) {
-                    // 调用图像生成API
-                    generateImage(prompt);
-                }
-            } else {
-                alert('功能开发中！');
-            }
+        // ========== 统计 ==========
+        function loadStats() {
+            const stats = JSON.parse(localStorage.getItem('toki_stats') || '{"messages":0,"tokens":0,"days":1}');
+            messageCount = stats.messages;
+            tokenCount = stats.tokens;
+            updateStats();
         }
         
-        function openFunModal(type) {
-            alert('娱乐功能开发中，敬请期待！');
+        function updateStats() {
+            document.getElementById('stat-messages').textContent = messageCount;
+            document.getElementById('stat-tokens').textContent = tokenCount;
+            
+            // 保存统计
+            localStorage.setItem('toki_stats', JSON.stringify({
+                messages: messageCount,
+                tokens: tokenCount,
+                days: 1,
+                lastUpdate: Date.now()
+            }));
         }
         
-        async function generateImage(prompt) {
-            try {
-                const response = await fetch(`${BASE_URL}/images/generations`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${API_KEY}`
-                    },
-                    body: JSON.stringify({
-                        model: 'cogview-3-flash',
-                        prompt: prompt
-                    })
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    const imageUrl = data.data[0].url;
-                    
-                    switchTab('chat');
-                    addMessage(`生成图片：${prompt}`, 'user');
-                    
-                    const messageDiv = document.createElement('div');
-                    messageDiv.className = 'message bot';
-                    messageDiv.innerHTML = `<img src="${imageUrl}" style="max-width:100%;border-radius:8px;">`;
-                    document.getElementById('chatTab').appendChild(messageDiv);
-                }
-            } catch (error) {
-                console.error('生成图片失败:', error);
-            }
+        // ========== Toast ==========
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
         }
+        
+        // ========== 启动 ==========
+        init();
     </script>
 </body>
 </html>
