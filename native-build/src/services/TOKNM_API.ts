@@ -2,9 +2,17 @@
 // 用于调用 TOKNM 平台的 AI 模型
 
 const TOKNM_CONFIG = {
-  baseUrl: 'https://toknm.hk/api',
-  apiKey: 'YOUR_API_KEY', // 从配置中读取
-  defaultModel: 'glm-4-flash'
+  // Gateway 代理地址（安全）
+  baseUrl: 'https://toknm.hk/v1',
+  apiKey: 'toknm-ea9f3d84920d4dc9a718b8e55021100f',
+  defaultModel: 'glm-4-flash',
+  
+  // 多模态模型配置（阿里云）
+  multimodal: {
+    baseUrl: 'https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1',
+    apiKey: 'sk-sp-H.RXIPE.ZRDm.MEYCIQCsk1q5MzpT8Nrfmi3FgVxaJ_EIK5wFZE8-5BIEkaiRcAIhAPWROp-D_0gKZ5H75WsH8a7-x9kxAl7zQ0zfK-TtmRfT',
+    model: 'qwen3.8-max-preview'
+  }
 };
 
 export class TOKNM_API {
@@ -82,6 +90,40 @@ export class TOKNM_API {
       }
     } catch (error) {
       console.error('图像生成错误:', error);
+      throw error;
+    }
+  }
+
+  // 多模态：图片理解（阿里云 qwen）
+  async analyzeImage(imageUrl: string, question: string): Promise<string> {
+    try {
+      const response = await fetch(`${TOKNM_CONFIG.multimodal.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${TOKNM_CONFIG.multimodal.apiKey}`
+        },
+        body: JSON.stringify({
+          model: TOKNM_CONFIG.multimodal.model,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'text', text: question || '请描述这张图片' },
+              { type: 'image_url', image_url: { url: imageUrl } }
+            ]
+          }],
+          max_tokens: 1000
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.choices[0].message.content;
+      } else {
+        throw new Error('图片分析失败');
+      }
+    } catch (error) {
+      console.error('图片分析错误:', error);
       throw error;
     }
   }
